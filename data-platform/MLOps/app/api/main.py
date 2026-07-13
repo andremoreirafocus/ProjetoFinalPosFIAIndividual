@@ -78,6 +78,10 @@ async def _load_model_with_retry(
             await asyncio.sleep(retry_seconds)
         else:
             app.state.model_load_error = None
+            print(
+                f"Modelo carregado com sucesso: {service.model_path}",
+                flush=True,
+            )
             logger.info("Modelo carregado com sucesso: %s", service.model_path)
 
 
