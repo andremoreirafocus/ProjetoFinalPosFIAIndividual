@@ -186,13 +186,62 @@ Para execução local fora de containers, também é necessário Python compatí
 
 ## Configuração inicial
 
-1. Configure o token do Jupyter em `data-platform/.env`:
+O Docker Compose lê automaticamente o arquivo `data-platform/.env`, localizado no
+mesmo diretório de `docker-compose.yml`. Antes de iniciar os serviços, crie ou
+revise esse arquivo com as configurações locais da plataforma:
 
 ```dotenv
+# Obrigatória: token solicitado no acesso ao JupyterLab
 JUPYTER_TOKEN=defina-um-token-local
+
+# Obrigatórias: limites da política de decisão de crédito
+CREDIT_APPROVE_MAX_SCORE=0.50
+CREDIT_MANUAL_REVIEW_MAX_SCORE=0.60
+
+# Opcionais: portas publicadas no computador hospedeiro
+CREDIT_API_PORT=8000
+CREDIT_FRONTEND_PORT=8501
 ```
 
-2. Coloque estes arquivos em `data-platform/airflow/data/csv`:
+### Variáveis utilizadas pela composição
+
+| Variável | Obrigatoriedade | Finalidade | Padrão |
+|---|---|---|---:|
+| `JUPYTER_TOKEN` | Obrigatória | Token usado para autenticar o acesso ao JupyterLab. | Sem padrão |
+| `CREDIT_APPROVE_MAX_SCORE` | Obrigatória | Limite superior da aprovação automática. Scores abaixo desse valor recebem recomendação de aprovação. | Sem padrão |
+| `CREDIT_MANUAL_REVIEW_MAX_SCORE` | Obrigatória | Limite superior da análise manual. Scores a partir desse valor recebem recomendação de rejeição. | Sem padrão |
+| `CREDIT_API_PORT` | Opcional | Porta do host pela qual a API de crédito será acessada. | `8000` |
+| `CREDIT_FRONTEND_PORT` | Opcional | Porta do host pela qual o frontend Streamlit será acessado. | `8501` |
+
+Os limites da política devem respeitar a relação
+`0 <= CREDIT_APPROVE_MAX_SCORE < CREDIT_MANUAL_REVIEW_MAX_SCORE <= 1`. Com os
+valores do exemplo, scores abaixo de `0.50` são aprovados automaticamente, scores
+entre `0.50` e `0.60` seguem para análise humana e scores a partir de `0.60`
+recebem recomendação de rejeição.
+
+O token do Jupyter deve ser substituído por um valor próprio, especialmente em
+ambientes compartilhados. Não publique tokens ou credenciais reais no
+repositório.
+
+> **Importante:** as credenciais do PostgreSQL, os bancos do Airflow e do
+> Metabase e a conexão interna do Airflow estão atualmente declarados diretamente
+> em `docker-compose.yml`. Variáveis de nomes semelhantes adicionadas ao `.env`
+> não alteram esses serviços enquanto a composição não fizer referência a elas.
+
+Para conferir a substituição das variáveis e visualizar a configuração final sem
+iniciar os containers:
+
+```bash
+cd data-platform
+docker compose config
+```
+
+O comando deve ser executado antes de `docker compose up`; ele também evidencia
+variáveis obrigatórias ausentes ou vazias.
+
+### Arquivos de origem
+
+Coloque estes arquivos em `data-platform/airflow/data/csv`:
 
 ```text
 application_train.csv
@@ -201,7 +250,8 @@ bureau.csv
 installments_payments.csv
 ```
 
-3. Entre na pasta da plataforma:
+Caso ainda não esteja nela, entre na pasta da plataforma antes de executar os
+demais comandos deste README:
 
 ```bash
 cd data-platform
