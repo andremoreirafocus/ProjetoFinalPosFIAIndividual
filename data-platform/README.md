@@ -198,7 +198,8 @@ JUPYTER_TOKEN=defina-um-token-local
 CREDIT_APPROVE_MAX_SCORE=0.50
 CREDIT_MANUAL_REVIEW_MAX_SCORE=0.60
 
-# Opcionais: portas publicadas no computador hospedeiro
+# Opcionais: carga do modelo e portas publicadas no computador hospedeiro
+MODEL_LOAD_RETRY_SECONDS=5
 CREDIT_API_PORT=8000
 CREDIT_FRONTEND_PORT=8501
 ```
@@ -210,6 +211,7 @@ CREDIT_FRONTEND_PORT=8501
 | `JUPYTER_TOKEN` | Obrigatória | Token usado para autenticar o acesso ao JupyterLab. | Sem padrão |
 | `CREDIT_APPROVE_MAX_SCORE` | Obrigatória | Limite superior da aprovação automática. Scores abaixo desse valor recebem recomendação de aprovação. | Sem padrão |
 | `CREDIT_MANUAL_REVIEW_MAX_SCORE` | Obrigatória | Limite superior da análise manual. Scores a partir desse valor recebem recomendação de rejeição. | Sem padrão |
+| `MODEL_LOAD_RETRY_SECONDS` | Opcional | Intervalo entre tentativas de carregamento do artefato. Enquanto o modelo não estiver disponível, a API permanece ativa e `/health` responde `503`. | `5` segundos |
 | `CREDIT_API_PORT` | Opcional | Porta do host pela qual a API de crédito será acessada. | `8000` |
 | `CREDIT_FRONTEND_PORT` | Opcional | Porta do host pela qual o frontend Streamlit será acessado. | `8501` |
 
@@ -302,6 +304,28 @@ docker compose up -d --build postgres credit-api credit-frontend
 | Swagger da API | http://localhost:8000/docs | — |
 | Health check | http://localhost:8000/health | — |
 | Streamlit | http://localhost:8501 | — |
+
+### Prontidão da API e carregamento do modelo
+
+O processo do `credit-api` pode iniciar mesmo que o artefato ainda não esteja
+disponível no volume. A API tenta carregar o modelo em segundo plano e, em caso de
+falha, registra o erro no log e repete a operação após o intervalo configurado em
+`MODEL_LOAD_RETRY_SECONDS`.
+
+Durante esse período, `GET /health` responde HTTP `503` e informa o caminho do
+artefato e o último erro de carregamento. Os endpoints que dependem do modelo
+também respondem `503`, evitando predições sem um artefato válido. Assim que uma
+tentativa é bem-sucedida, `/health` passa a responder HTTP `200` com
+`model_loaded: true`, sem necessidade de reiniciar o container.
+
+Para acompanhar as tentativas:
+
+```bash
+docker compose logs -f credit-api
+```
+
+O contrato completo e exemplos das respostas estão descritos no
+[`README` do MLOps](MLOps/README.md#carregamento-do-modelo-e-health-check).
 
 ## Execução do pipeline
 
