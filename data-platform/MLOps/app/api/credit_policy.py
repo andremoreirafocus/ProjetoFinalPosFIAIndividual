@@ -36,13 +36,13 @@ class CreditPolicy:
 
         if risk_score < self.approve_max_score:
             recommendation: Recommendation = "approve"
-            reason = "Score abaixo do limite de aprovação da política."
+            reason = "Score de risco abaixo do limite mínimo."
         elif risk_score < self.manual_review_max_score:
             recommendation = "manual_review"
-            reason = "Score na faixa intermediária; requer análise humana."
+            reason = "Score de risco na faixa intermediária."
         else:
             recommendation = "reject"
-            reason = "Score acima do limite máximo aceito pela política."
+            reason = "Score de risco acima do limite máximo."
 
         return PolicyDecision(
             recommendation=recommendation,

@@ -208,6 +208,11 @@ def _predict(
 
     try:
         risk_score, predicted_class = prediction_service.predict(features)
+        print(
+            f"Predição realizada com sucesso. "
+            f"Score: {risk_score:.4f}, Classe: {predicted_class}",
+            flush=True,
+        )
     except ModelInputError as error:
         raise HTTPException(
             status_code=422,
