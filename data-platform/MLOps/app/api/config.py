@@ -17,10 +17,7 @@ class Settings:
     model_load_retry_seconds: float = float(
         os.getenv("MODEL_LOAD_RETRY_SECONDS", "5")
     )
-    database_url: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql+psycopg2://airflow:airflow@postgres:5432/data",
-    )
+    database_url: str | None = os.getenv("DATABASE_URL")
     approve_max_score: float = float(os.getenv("CREDIT_APPROVE_MAX_SCORE", "0.50"))
     manual_review_max_score: float = float(
         os.getenv("CREDIT_MANUAL_REVIEW_MAX_SCORE", "0.60")
@@ -28,6 +25,8 @@ class Settings:
     policy_version: str = os.getenv("CREDIT_POLICY_VERSION", "demo-v1")
 
     def validate(self) -> None:
+        if not self.database_url:
+            raise ValueError("DATABASE_URL deve ser definida.")
         if self.model_load_retry_seconds <= 0:
             raise ValueError("MODEL_LOAD_RETRY_SECONDS deve ser maior que zero.")
         if not 0 <= self.approve_max_score < self.manual_review_max_score <= 1:
