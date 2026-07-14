@@ -30,7 +30,6 @@ echo "Creating Windows-compatible ZIP: $OUTPUT_FILE"
         -x "$PROJECT_NAME/*/venv/*" \
         -x "$PROJECT_NAME/*/__pycache__/*" \
         -x "$PROJECT_NAME/*.pyc" \
-        #-x "$PROJECT_NAME/*.csv" \
         -x "$PROJECT_NAME/*.pyo" \
         -x "$PROJECT_NAME/.pytest_cache/*" \
         -x "$PROJECT_NAME/*/.pytest_cache/*" \
