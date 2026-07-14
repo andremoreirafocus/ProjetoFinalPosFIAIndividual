@@ -24,10 +24,12 @@ def get_database_connection(conn_id: str = "postgres_data_db", silent: bool = Fa
     # Fallback para execução local/notebook via SQLAlchemy
     from sqlalchemy import create_engine
 
-    # Mapeando o host baseado no ambiente (se roda dentro do ecossistema docker ou na máquina local)
-    # No docker o host do banco chama-se 'postgres'. Na máquina local acessamos via 'localhost'
-    host = "postgres" if os.path.exists("/.dockerenv") else "localhost"
-    conn_str = f"postgresql://airflow:airflow@{host}:5432/data"
+    # Mantém a seleção original de host: nome do serviço no Docker e localhost fora dele.
+    host = os.getenv("POSTGRES_HOST") if os.path.exists("/.dockerenv") else "localhost"
+    conn_str = (
+        f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
+        f"@{host}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DATA_DB')}"
+    )
 
     if not silent:
         print(f"[CONEXÃO] Execução isolada detectada (Local/Notebook). Conectando via SQLAlchemy em '{host}'.")
@@ -54,8 +56,11 @@ def get_database_engine(conn_id: str = "postgres_data_db", silent: bool = False)
 
     from sqlalchemy import create_engine
 
-    host = "postgres" if os.path.exists("/.dockerenv") else "localhost"
-    conn_str = f"postgresql://airflow:airflow@{host}:5432/data"
+    host = os.getenv("POSTGRES_HOST") if os.path.exists("/.dockerenv") else "localhost"
+    conn_str = (
+        f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
+        f"@{host}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DATA_DB')}"
+    )
     if not silent:
         print(f"[CONEXÃO] Execução isolada detectada (Local/Notebook). Engine SQLAlchemy em '{host}'.")
     return create_engine(conn_str)
