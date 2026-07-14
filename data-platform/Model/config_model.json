@@ -62,6 +62,9 @@
     },
     "inference": {
       "decision_threshold": 0.5
+    },
+    "reference": {
+      "shap_sample_size": 2000
     }
   },
   "validation": {
