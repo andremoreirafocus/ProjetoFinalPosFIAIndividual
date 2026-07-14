@@ -8,9 +8,13 @@ import argparse
 import pickle
 import pandas as pd
 from pathlib import Path
+from dotenv import load_dotenv
 
 MODEL_DIR = Path(__file__).resolve().parent
+DATA_PLATFORM_DIR = MODEL_DIR.parent
 ARTIFACT_PATH = MODEL_DIR / "artifacts/lightgbm_abt.pkl"
+
+load_dotenv(DATA_PLATFORM_DIR / ".env")
 
 
 def get_database_connection(conn_id: str = "postgres_data_db", silent: bool = False):
@@ -24,8 +28,11 @@ def get_database_connection(conn_id: str = "postgres_data_db", silent: bool = Fa
 
     # Mapeando o host baseado no ambiente (se roda dentro do ecossistema docker ou na máquina local)
     # No docker o host do banco chama-se 'postgres'. Na máquina local acessamos via 'localhost'
-    host = "postgres" if os.path.exists("/.dockerenv") else "localhost"
-    conn_str = f"postgresql://airflow:airflow@{host}:5432/data"
+    host = os.getenv("POSTGRES_HOST") if os.path.exists("/.dockerenv") else "localhost"
+    conn_str = (
+        f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
+        f"@{host}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DATA_DB')}"
+    )
 
     if not silent:
         print(f"[CONEXÃO] Execução isolada detectada (Local/Notebook). Conectando via SQLAlchemy em '{host}'.")
