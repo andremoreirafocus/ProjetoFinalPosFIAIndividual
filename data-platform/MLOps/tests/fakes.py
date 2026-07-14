@@ -55,7 +55,6 @@ class FakePredictionService:
         score: float = 0.55,
         predicted_class: int = 1,
         missing: list[str] | None = None,
-        explanation: dict[str, Any] | None = None,
     ) -> None:
         self._loaded = loaded
         self._features = features or ["ext_source_1", "occupation_type"]
@@ -63,11 +62,6 @@ class FakePredictionService:
         self._score = score
         self._class = predicted_class
         self._missing = missing
-        self._explanation = explanation or {
-            "base_value": -0.4,
-            "output_scale": "raw_score",
-            "top_factors": [],
-        }
         self.model_path = "/fake/model.pkl"
 
     @property
@@ -86,10 +80,6 @@ class FakePredictionService:
         if self._missing is not None:
             raise ModelInputError(self._missing)
         return self._score, self._class
-
-    def explain(self, features: dict[str, Any]) -> dict[str, Any]:
-        return dict(self._explanation)
-
 
 class FakeFeatureService:
     """Fake do ``CustomerFeatureService`` para os endpoints por cliente.
@@ -114,6 +104,20 @@ class FakeFeatureService:
                 f"Cliente {customer_id} não encontrado em application_abt."
             )
         return dict(self._features)
+
+
+class FakeExplanationService:
+    """Fake do serviço de explicação injetado nos testes HTTP."""
+
+    def __init__(self, explanation: dict[str, Any] | None = None) -> None:
+        self.explanation = explanation or {
+            "base_value": -0.4,
+            "output_scale": "raw_score",
+            "top_factors": [],
+        }
+
+    def explain(self, features: dict[str, Any]) -> dict[str, Any]:
+        return dict(self.explanation)
 
 
 class RetryFakeService:

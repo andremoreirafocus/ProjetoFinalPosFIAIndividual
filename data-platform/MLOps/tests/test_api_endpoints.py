@@ -5,7 +5,11 @@ from sqlalchemy.exc import OperationalError
 
 from MLOps.app.api.credit_policy import CreditPolicy
 from MLOps.app.api.main import app
-from MLOps.tests.fakes import FakeFeatureService, FakePredictionService
+from MLOps.tests.fakes import (
+    FakeExplanationService,
+    FakeFeatureService,
+    FakePredictionService,
+)
 
 
 def _db_error() -> OperationalError:
@@ -28,6 +32,7 @@ class ApiEndpointsTest(unittest.TestCase):
     ) -> TestClient:
         client = TestClient(app)
         app.state.prediction_service = prediction_service or FakePredictionService()
+        app.state.explanation_service = FakeExplanationService()
         app.state.feature_service = feature_service or FakeFeatureService(
             features={"ext_source_1": 0.5, "occupation_type": "Laborers"}
         )

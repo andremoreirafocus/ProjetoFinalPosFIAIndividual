@@ -11,6 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from .config import settings
 from .credit_policy import CreditPolicy
+from .explanation_service import ExplanationService
 from .feature_service import CustomerFeatureService, CustomerNotFoundError
 from .model_service import ModelInputError, PredictionService
 from .schemas import (
@@ -29,6 +30,7 @@ async def lifespan(app: FastAPI):
     settings.validate()
 
     prediction_service = PredictionService(settings.model_path)
+    explanation_service = ExplanationService(prediction_service)
     database_engine = create_engine(settings.database_url, pool_pre_ping=True)
     feature_service = CustomerFeatureService(database_engine)
     credit_policy = CreditPolicy(
@@ -38,6 +40,7 @@ async def lifespan(app: FastAPI):
     )
 
     app.state.prediction_service = prediction_service
+    app.state.explanation_service = explanation_service
     app.state.feature_service = feature_service
     app.state.credit_policy = credit_policy
     app.state.model_load_error = None
@@ -206,6 +209,7 @@ def _predict(
     customer_id: int | None = None,
 ) -> PredictionResponse:
     prediction_service: PredictionService = request.app.state.prediction_service
+    explanation_service: ExplanationService = request.app.state.explanation_service
     credit_policy: CreditPolicy = request.app.state.credit_policy
 
     _ensure_model_loaded(prediction_service)
@@ -229,7 +233,7 @@ def _predict(
     policy_decision = credit_policy.evaluate(risk_score)
     explanation = None
     if policy_decision.recommendation == "manual_review":
-        explanation = prediction_service.explain(features)
+        explanation = explanation_service.explain(features)
 
     return PredictionResponse(
         source=source,

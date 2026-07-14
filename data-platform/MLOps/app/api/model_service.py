@@ -2,7 +2,6 @@ import pickle
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 
 
@@ -58,53 +57,20 @@ class PredictionService:
         self._ensure_loaded()
         return float(self.artifact["decision_threshold"])
 
+    @property
+    def model(self) -> Any:
+        self._ensure_loaded()
+        return self.artifact["model"]
+
     def predict(self, features: dict[str, Any]) -> tuple[float, int]:
         self._ensure_loaded()
-        customer = self._prepare_customer(features)
-        risk_score = float(self.artifact["model"].predict_proba(customer)[0, 1])
+        customer = self.prepare_customer(features)
+        risk_score = float(self.model.predict_proba(customer)[0, 1])
         predicted_class = int(risk_score >= self.decision_threshold)
         return risk_score, predicted_class
 
-    def explain(self, features: dict[str, Any], max_factors: int = 10) -> dict[str, Any]:
-        """Calcula contribuições TreeSHAP locais para um único cliente."""
-        self._ensure_loaded()
-        customer = self._prepare_customer(features)
-        model = self.artifact["model"]
-        booster = getattr(model, "booster_", None)
-        if booster is None:
-            raise RuntimeError("O modelo carregado não oferece explicação TreeSHAP.")
-
-        contributions = np.asarray(
-            booster.predict(customer, pred_contrib=True), dtype=float
-        )
-        if contributions.ndim != 2 or contributions.shape[1] != len(self.expected_features) + 1:
-            raise RuntimeError("Formato inesperado das contribuições TreeSHAP.")
-
-        feature_contributions = contributions[0, :-1]
-        factors = []
-        for feature, shap_value in zip(self.expected_features, feature_contributions):
-            value = customer.iloc[0][feature]
-            if hasattr(value, "item"):
-                value = value.item()
-            factors.append(
-                {
-                    "feature": feature,
-                    "value": value,
-                    "shap_value": float(shap_value),
-                    "direction": (
-                        "increases_risk" if shap_value > 0 else "reduces_risk"
-                    ),
-                }
-            )
-
-        factors.sort(key=lambda item: abs(item["shap_value"]), reverse=True)
-        return {
-            "base_value": float(contributions[0, -1]),
-            "output_scale": "raw_score",
-            "top_factors": factors[:max_factors],
-        }
-
-    def _prepare_customer(self, features: dict[str, Any]) -> pd.DataFrame:
+    def prepare_customer(self, features: dict[str, Any]) -> pd.DataFrame:
+        """Restaura ordem, tipos e categorias usados no treinamento."""
         missing_features = sorted(set(self.expected_features).difference(features))
         if missing_features:
             raise ModelInputError(missing_features)

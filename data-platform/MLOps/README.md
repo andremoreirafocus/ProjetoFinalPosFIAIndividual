@@ -20,12 +20,15 @@ A implementação é deliberadamente acadêmica: demonstra o serving do modelo e
 ```text
 Formulário de features ───────────────┐
                                      ├→ PredictionService → CreditPolicy → FastAPI
+                                     │                       │
+                                     │            manual_review → ExplanationService
 PostgreSQL / application_abt → FeatureService                         │
                                                                       └→ Streamlit
 ```
 
 - `FeatureService` recupera da ABT as mesmas features usadas no treinamento;
 - `PredictionService` carrega o artefato LightGBM e calcula o score;
+- `ExplanationService` calcula TreeSHAP local para os casos em revisão manual;
 - `CreditPolicy` converte o score em `approve`, `manual_review` ou `reject`;
 - FastAPI expõe os contratos;
 - Streamlit oferece preenchimento manual, recuperação editável e consulta direta de clientes.
@@ -44,6 +47,7 @@ FastAPI    (contrato / transporte)
    │
    ├─ FeatureService ───→ acesso a dados: recupera as features do cliente na ABT
    ├─ PredictionService → inferência: alinha o contrato do artefato e calcula o score
+   ├─ ExplanationService → explicação: calcula TreeSHAP local quando solicitado
    └─ CreditPolicy ─────→ regra de negócio: converte o score em recomendação
 ```
 
@@ -99,6 +103,7 @@ Simulador para o analista de crédito, que **consome a API** e nunca acessa o mo
 |---|---|---|
 | `feature_service` | Recuperar uma linha da ABT e preparar suas features. | Reexecutar a engenharia de atributos sobre as fontes brutas. |
 | `model_service` | Validar o artefato, alinhar tipos e calcular score/classe. | Definir aprovação ou rejeição de negócio. |
+| `explanation_service` | Calcular contribuições TreeSHAP locais para revisão manual. | Calcular score ou definir a política de crédito. |
 | `credit_policy` | Traduzir faixas de score em recomendação demonstrativa. | Retreinar ou calibrar o modelo. |
 | FastAPI | Gerenciar ciclo de vida, contratos e erros HTTP. | Armazenar histórico definitivo das decisões. |
 | Streamlit | Oferecer jornadas de demonstração e explicar o resultado. | Conter o modelo ou acessar diretamente o Pickle. |
