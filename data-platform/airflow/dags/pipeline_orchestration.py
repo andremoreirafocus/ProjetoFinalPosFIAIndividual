@@ -73,6 +73,10 @@ with DAG(
         run_create_indexes(conn_id)
 
     # --- TASKS DE HIGIENIZAÇÃO ---
+    @task(task_id="task_sanitize_installments", pool="pool_sanitization")
+    def task_sanitize_installments(conn_id: str, input_t: str, output_t: str):
+        run_installments_sanitization(conn_id, input_t, output_t)
+
     @task(task_id="task_sanitize_app", pool="pool_sanitization")
     def task_sanitize_app(
         conn_id: str, input_t: str, output_t: str, min_freq: int, winsor_q: float
@@ -87,10 +91,6 @@ with DAG(
     @task(task_id="task_sanitize_bureau", pool="pool_sanitization")
     def task_sanitize_bureau(conn_id: str, input_t: str, output_t: str):
         run_bureau_sanitization(conn_id, input_t, output_t)
-
-    @task(task_id="task_sanitize_installments", pool="pool_sanitization")
-    def task_sanitize_installments(conn_id: str, input_t: str, output_t: str):
-        run_installments_sanitization(conn_id, input_t, output_t)
 
     @task
     def task_abt_indexes(conn_id: str, config: dict):
@@ -127,6 +127,12 @@ with DAG(
     ).expand(config_tabela=tabelas_para_ingerir)
 
     cria_indices = task_criar_indices(CONN_ID)
+    
+    limpeza_installments = task_sanitize_installments(
+        conn_id=CONN_ID,
+        input_t=db_config.get("input_installments_table"),
+        output_t=db_config.get("output_installments_table"),
+    )
 
     limpeza_app = task_sanitize_app(
         conn_id=CONN_ID,
@@ -147,17 +153,11 @@ with DAG(
         input_t=db_config.get("input_bureau_table"),
         output_t=db_config.get("output_bureau_table"),
     )
-
-    limpeza_installments = task_sanitize_installments(
-        conn_id=CONN_ID,
-        input_t=db_config.get("input_installments_table"),
-        output_t=db_config.get("output_installments_table"),
-    )
-
+    
     t_abt_index = task_abt_indexes(CONN_ID, db_config)
+    t_inst = task_agg_inst(CONN_ID, db_config.get("output_installments_table"))
     t_prev = task_agg_prev(CONN_ID, db_config.get("output_prev_table"))
     t_bureau = task_agg_bureau(CONN_ID, db_config.get("output_bureau_table"))
-    t_inst = task_agg_inst(CONN_ID, db_config.get("output_installments_table"))
     t_abt_final = task_abt_final_generation(CONN_ID, db_config)
 
     treino_modelo = task_train(CONN_ID, db_config.get("abt_table"))
@@ -166,7 +166,7 @@ with DAG(
     (
         carga_inicial
         >> cria_indices
-        >> [limpeza_app, limpeza_prev, limpeza_bureau, limpeza_installments]
+        >> [limpeza_installments, limpeza_app, limpeza_prev, limpeza_bureau]
         >> t_abt_index
     )
     t_abt_index >> [t_prev, t_bureau, t_inst] >> t_abt_final >> treino_modelo
