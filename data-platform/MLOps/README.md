@@ -326,7 +326,28 @@ O exemplo é abreviado para leitura; uma chamada válida deve incluir todas as f
         "feature": "inst_late_payment_rate",
         "value": 0.27,
         "shap_value": 0.42,
-        "direction": "increases_risk"
+        "direction": "increases_risk",
+        "comparison": {
+          "feature_type": "numeric",
+          "numeric": {
+            "training_percentile_low": 90.0,
+            "training_percentile_high": 91.0,
+            "population_mean": 0.06,
+            "population_median": 0.0,
+            "population_p25": 0.0,
+            "population_p75": 0.08,
+            "target_0_median": 0.0,
+            "target_1_median": 0.03,
+            "binary_rates": null
+          },
+          "categorical": null,
+          "shap": {
+            "global_mean_abs_shap": 0.17,
+            "local_abs_shap": 0.42,
+            "abs_shap_percentile_low": 95,
+            "abs_shap_percentile_high": 99
+          }
+        }
       }
     ]
   }
@@ -341,6 +362,13 @@ valor absoluto da contribuição. Valores positivos aumentam o risco estimado e
 valores negativos o reduzem. `base_value` e `shap_value` estão na escala bruta do
 modelo, não em pontos percentuais de probabilidade. Nas demais faixas,
 `explanation` é `null`.
+
+Cada fator inclui ainda `comparison`, construído pelo `ExplanationService` a
+partir do `feature_reference.json` da mesma execução do modelo. Features
+numéricas recebem posição percentual e estatísticas da população; flags incluem
+taxas geral e por target; categóricas recebem contagem, frequência e taxa
+histórica de inadimplência. O impacto SHAP local é situado entre os percentis da
+distribuição global de impacto absoluto daquela feature.
 
 ## Jornadas do frontend
 

@@ -62,6 +62,16 @@ class PredictionService:
         self._ensure_loaded()
         return self.artifact["model"]
 
+    @property
+    def config_version(self) -> str | None:
+        self._ensure_loaded()
+        return self.artifact.get("config_version")
+
+    @property
+    def trained_at_utc(self) -> str | None:
+        self._ensure_loaded()
+        return self.artifact.get("trained_at_utc")
+
     def predict(self, features: dict[str, Any]) -> tuple[float, int]:
         self._ensure_loaded()
         customer = self.prepare_customer(features)

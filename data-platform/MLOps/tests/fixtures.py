@@ -38,10 +38,60 @@ def build_artifact(
         ),
         "decision_threshold": threshold,
         "metrics": {"roc_auc": 0.75},
+        "config_version": "test-v1",
+        "trained_at_utc": "2026-07-14T00:00:00+00:00",
     }
     if include_input_features:
         artifact["input_features"] = artifact["features"]
     return artifact
+
+
+def build_feature_reference() -> dict[str, Any]:
+    return {
+        "model_version": "test-v1",
+        "trained_at_utc": "2026-07-14T00:00:00+00:00",
+        "target_rate": 0.08,
+        "numeric_features": {
+            "ext_source_1": {
+                "mean": 0.50,
+                "median": 0.50,
+                "p25": 0.25,
+                "p75": 0.75,
+                "target_0_median": 0.55,
+                "target_1_median": 0.40,
+                "percentiles": {f"p{i:02d}": i / 100 for i in range(101)},
+            }
+        },
+        "categorical_features": {
+            "occupation_type": {
+                "count": {"Laborers": 60, "Managers": 40},
+                "frequency": {"Laborers": 0.60, "Managers": 0.40},
+                "default_rate": {"Laborers": 0.10, "Managers": 0.05},
+            }
+        },
+        "global_shap": {
+            "feature_importance": [
+                {
+                    "feature": "ext_source_1",
+                    "mean_abs_shap": 0.20,
+                    "p50_abs_shap": 0.10,
+                    "p75_abs_shap": 0.20,
+                    "p90_abs_shap": 0.30,
+                    "p95_abs_shap": 0.40,
+                    "p99_abs_shap": 0.50,
+                },
+                {
+                    "feature": "occupation_type",
+                    "mean_abs_shap": 0.08,
+                    "p50_abs_shap": 0.05,
+                    "p75_abs_shap": 0.10,
+                    "p90_abs_shap": 0.15,
+                    "p95_abs_shap": 0.20,
+                    "p99_abs_shap": 0.25,
+                },
+            ]
+        },
+    }
 
 
 def write_artifact_pickle(directory: Path, artifact: dict[str, Any]) -> Path:

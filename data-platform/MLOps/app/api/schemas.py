@@ -24,11 +24,51 @@ class CreditPolicyResult(BaseModel):
     manual_review_max_score: float
 
 
+class BinaryRates(BaseModel):
+    overall: float
+    target_0: float
+    target_1: float
+
+
+class NumericComparison(BaseModel):
+    training_percentile_low: float = Field(ge=0, le=100)
+    training_percentile_high: float = Field(ge=0, le=100)
+    population_mean: float
+    population_median: float
+    population_p25: float
+    population_p75: float
+    target_0_median: float
+    target_1_median: float
+    binary_rates: BinaryRates | None = None
+
+
+class CategoricalComparison(BaseModel):
+    category_count: int = Field(ge=0)
+    category_frequency: float = Field(ge=0, le=1)
+    category_default_rate: float | None = Field(default=None, ge=0, le=1)
+    population_default_rate: float = Field(ge=0, le=1)
+
+
+class ShapComparison(BaseModel):
+    global_mean_abs_shap: float = Field(ge=0)
+    local_abs_shap: float = Field(ge=0)
+    abs_shap_percentile_low: int = Field(ge=0, le=100)
+    abs_shap_percentile_high: int = Field(ge=0, le=100)
+
+
+class FeatureComparison(BaseModel):
+    feature_type: Literal["numeric", "categorical"]
+    shap: ShapComparison
+    numeric: NumericComparison | None = None
+    categorical: CategoricalComparison | None = None
+
+
 class ShapFactor(BaseModel):
     feature: str
     value: Any
     shap_value: float
     direction: Literal["increases_risk", "reduces_risk"]
+    comparison: FeatureComparison
 
 
 class LocalExplanation(BaseModel):

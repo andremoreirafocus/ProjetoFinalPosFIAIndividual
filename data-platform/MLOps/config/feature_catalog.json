@@ -1,0 +1,509 @@
+{
+  "catalog_version": "1.0.0",
+  "language": "pt-BR",
+  "description": "Catálogo semântico e de governança das features usadas pelo modelo de risco de crédito.",
+  "sources": [
+    "airflow/data/csv/HomeCredit_columns_description.csv",
+    "DataPipeline/exp_analysis_raw.ipynb",
+    "DataPipeline/exp_analysis_abt.ipynb",
+    "DataPipeline/data_sanitization.py",
+    "DataPipeline/abt_transform.py",
+    "Model/config_model.json"
+  ],
+  "features": {
+    "ext_source_1": {
+      "label": "Score externo 1",
+      "description": "Score normalizado fornecido por uma fonte externa de dados de crédito.",
+      "type": "numeric",
+      "format": "decimal",
+      "unit": "score normalizado",
+      "source": "application_train.ext_source_1",
+      "value_semantics": "Valores maiores estiveram associados a menor inadimplência na análise exploratória. Valores ausentes são imputados pela mediana.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "ext_source_2": {
+      "label": "Score externo 2",
+      "description": "Score normalizado fornecido por uma fonte externa de dados de crédito.",
+      "type": "numeric",
+      "format": "decimal",
+      "unit": "score normalizado",
+      "source": "application_train.ext_source_2",
+      "value_semantics": "Valores maiores estiveram associados a menor inadimplência na análise exploratória. Valores ausentes são imputados pela mediana.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "ext_source_3": {
+      "label": "Score externo 3",
+      "description": "Score normalizado fornecido por uma fonte externa de dados de crédito.",
+      "type": "numeric",
+      "format": "decimal",
+      "unit": "score normalizado",
+      "source": "application_train.ext_source_3",
+      "value_semantics": "Valores maiores estiveram associados a menor inadimplência na análise exploratória. Valores ausentes são imputados pela mediana.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "ext_source_mean": {
+      "label": "Média dos scores externos",
+      "description": "Média dos três scores externos após a imputação das respectivas medianas.",
+      "type": "numeric",
+      "format": "decimal",
+      "unit": "score normalizado",
+      "source": "derivada de ext_source_1, ext_source_2 e ext_source_3",
+      "calculation": "(ext_source_1 + ext_source_2 + ext_source_3) / 3",
+      "value_semantics": "Valores maiores estiveram associados a menor inadimplência na análise exploratória.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "region_rating_client_w_city": {
+      "label": "Classificação da região considerando a cidade",
+      "description": "Classificação da região onde o cliente reside, considerando também a cidade.",
+      "type": "numeric",
+      "format": "integer",
+      "unit": "classe ordinal",
+      "source": "application_train.region_rating_client_w_city",
+      "value_semantics": "Escala ordinal com valores 1, 2 ou 3 definida na fonte Home Credit.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "days_last_phone_change": {
+      "label": "Tempo desde a última troca de telefone",
+      "description": "Número de dias entre a última troca de telefone do cliente e a solicitação atual.",
+      "type": "numeric",
+      "format": "days_before_application",
+      "unit": "dias",
+      "source": "application_train.days_last_phone_change",
+      "value_semantics": "Eventos anteriores à solicitação são representados por valores negativos; quanto mais próximo de zero, mais recente o evento. Ausências são imputadas pela mediana.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "days_id_publish": {
+      "label": "Tempo desde a emissão do documento",
+      "description": "Número de dias entre a emissão ou troca do documento de identidade usado e a solicitação atual.",
+      "type": "numeric",
+      "format": "days_before_application",
+      "unit": "dias",
+      "source": "application_train.days_id_publish",
+      "value_semantics": "Eventos anteriores à solicitação são representados por valores negativos; quanto mais próximo de zero, mais recente o evento.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "days_registration": {
+      "label": "Tempo desde a alteração do registro",
+      "description": "Número de dias entre a última alteração do registro cadastral do cliente e a solicitação atual.",
+      "type": "numeric",
+      "format": "days_before_application",
+      "unit": "dias",
+      "source": "application_train.days_registration",
+      "value_semantics": "Eventos anteriores à solicitação são representados por valores negativos; quanto mais próximo de zero, mais recente o evento.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "reg_city_not_work_city": {
+      "label": "Cidade do registro diferente da cidade de trabalho",
+      "description": "Indica se a cidade do endereço permanente do cliente difere da cidade de trabalho.",
+      "type": "binary",
+      "format": "boolean",
+      "unit": null,
+      "source": "application_train.reg_city_not_work_city",
+      "value_semantics": "0 = mesma cidade; 1 = cidades diferentes.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "reg_city_not_live_city": {
+      "label": "Cidade do registro diferente da cidade de residência",
+      "description": "Indica se a cidade do endereço permanente do cliente difere da cidade do endereço de contato.",
+      "type": "binary",
+      "format": "boolean",
+      "unit": null,
+      "source": "application_train.reg_city_not_live_city",
+      "value_semantics": "0 = mesma cidade; 1 = cidades diferentes.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "live_city_not_work_city": {
+      "label": "Cidade de residência diferente da cidade de trabalho",
+      "description": "Indica se a cidade do endereço de contato do cliente difere da cidade de trabalho.",
+      "type": "binary",
+      "format": "boolean",
+      "unit": null,
+      "source": "application_train.live_city_not_work_city",
+      "value_semantics": "0 = mesma cidade; 1 = cidades diferentes.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "has_car": {
+      "label": "Possui automóvel",
+      "description": "Indica se o cliente declarou possuir automóvel.",
+      "type": "binary",
+      "format": "boolean",
+      "unit": null,
+      "source": "derivada de application_train.flag_own_car",
+      "calculation": "1 quando flag_own_car = 'Y'; 0 nos demais casos",
+      "value_semantics": "0 = não possui automóvel; 1 = possui automóvel.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "own_car_age": {
+      "label": "Idade do automóvel",
+      "description": "Idade do automóvel declarado pelo cliente.",
+      "type": "numeric",
+      "format": "decimal",
+      "unit": "anos",
+      "source": "application_train.own_car_age e application_train.flag_own_car",
+      "value_semantics": "Para quem possui automóvel, ausências são imputadas pela mediana dos proprietários; para quem não possui, o valor é 0 e deve ser interpretado junto com has_car.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "def_60_cnt_social_circle": {
+      "label": "Inadimplências de 60 dias no círculo social",
+      "description": "Quantidade de observações do círculo social do cliente que apresentaram atraso de 60 dias.",
+      "type": "numeric",
+      "format": "integer",
+      "unit": "observações",
+      "source": "application_train.def_60_cnt_social_circle",
+      "value_semantics": "Contagem; valores ausentes são substituídos por 0.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "amt_req_credit_bureau_year": {
+      "label": "Consultas ao bureau no último ano",
+      "description": "Quantidade de consultas ao bureau de crédito no período anual definido pela fonte, excluindo os três meses mais recentes antes da solicitação.",
+      "type": "numeric",
+      "format": "integer",
+      "unit": "consultas",
+      "source": "application_train.amt_req_credit_bureau_year",
+      "value_semantics": "Contagem; valores ausentes são substituídos por 0.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "cnt_children": {
+      "label": "Quantidade de filhos",
+      "description": "Quantidade de filhos informada pelo cliente.",
+      "type": "numeric",
+      "format": "integer",
+      "unit": "pessoas",
+      "source": "application_train.cnt_children",
+      "value_semantics": "Contagem; valores ausentes são substituídos por 0.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "cnt_fam_members": {
+      "label": "Quantidade de membros da família",
+      "description": "Quantidade de pessoas que compõem a família do cliente.",
+      "type": "numeric",
+      "format": "decimal",
+      "unit": "pessoas",
+      "source": "application_train.cnt_fam_members",
+      "value_semantics": "Valores ausentes são imputados pela mediana.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "amt_income_total": {
+      "label": "Renda total",
+      "description": "Renda total informada pelo cliente.",
+      "type": "numeric",
+      "format": "currency",
+      "unit": "unidade monetária do dataset",
+      "source": "application_train.amt_income_total",
+      "value_semantics": "Valores nulos ou iguais a zero são imputados pela mediana e valores extremos superiores são limitados ao percentil configurado no pipeline.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "amt_credit": {
+      "label": "Valor do crédito",
+      "description": "Valor total do crédito da solicitação atual.",
+      "type": "numeric",
+      "format": "currency",
+      "unit": "unidade monetária do dataset",
+      "source": "application_train.amt_credit",
+      "value_semantics": "Valor monetário do crédito solicitado.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "amt_annuity": {
+      "label": "Valor da anuidade/parcela",
+      "description": "Valor da anuidade associada ao crédito da solicitação atual.",
+      "type": "numeric",
+      "format": "currency",
+      "unit": "unidade monetária do dataset",
+      "source": "application_train.amt_annuity",
+      "value_semantics": "Valor monetário; ausências são imputadas pela mediana.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "age": {
+      "label": "Idade",
+      "description": "Idade do cliente na data da solicitação.",
+      "type": "numeric",
+      "format": "decimal",
+      "unit": "anos",
+      "source": "derivada de application_train.days_birth",
+      "calculation": "abs(days_birth) / 365.25",
+      "value_semantics": "Idade aproximada em anos.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "years_employed": {
+      "label": "Tempo de emprego",
+      "description": "Tempo de emprego informado pelo cliente, convertido de dias para anos.",
+      "type": "numeric",
+      "format": "decimal",
+      "unit": "anos",
+      "source": "derivada de application_train.days_employed",
+      "calculation": "0 quando days_employed = 365243; caso contrário, abs(days_employed) / 365.25",
+      "value_semantics": "O valor 0 pode representar a sentinela 365243 e deve ser interpretado junto com days_employed_anom.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "days_employed_anom": {
+      "label": "Indicador de tempo de emprego anômalo",
+      "description": "Indica a ocorrência do valor sentinela 365243 no tempo de emprego original.",
+      "type": "binary",
+      "format": "boolean",
+      "unit": null,
+      "source": "derivada de application_train.days_employed",
+      "calculation": "1 quando days_employed = 365243; 0 nos demais casos",
+      "value_semantics": "0 = tempo de emprego regular; 1 = valor sentinela presente na fonte.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "fe_credit_income_percent": {
+      "label": "Relação entre crédito e renda",
+      "description": "Razão entre o valor do crédito solicitado e a renda total do cliente.",
+      "type": "numeric",
+      "format": "ratio",
+      "unit": "razão",
+      "source": "derivada de amt_credit e amt_income_total",
+      "calculation": "amt_credit / amt_income_total quando amt_income_total > 0",
+      "value_semantics": "Por exemplo, 2 significa que o crédito corresponde a duas vezes a renda informada; apesar do sufixo, o valor não é multiplicado por 100.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "fe_annuity_income_percent": {
+      "label": "Relação entre anuidade e renda",
+      "description": "Razão entre o valor da anuidade do crédito e a renda total do cliente.",
+      "type": "numeric",
+      "format": "ratio",
+      "unit": "razão",
+      "source": "derivada de amt_annuity e amt_income_total",
+      "calculation": "amt_annuity / amt_income_total quando amt_income_total > 0",
+      "value_semantics": "Por exemplo, 0,15 corresponde a uma razão de 15%; o valor armazenado não é multiplicado por 100.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "prev_refused_rate": {
+      "label": "Taxa de solicitações anteriores recusadas",
+      "description": "Proporção das solicitações anteriores do cliente que tiveram status recusado.",
+      "type": "numeric",
+      "format": "percentage",
+      "unit": "proporção",
+      "source": "agregada de previous_application.name_contract_status por sk_id_curr",
+      "calculation": "quantidade de solicitações recusadas / quantidade de solicitações anteriores",
+      "value_semantics": "Varia de 0 a 1. Para clientes sem histórico de solicitações anteriores, recebe 0 e deve ser interpretada junto com has_prev_app.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "has_prev_app": {
+      "label": "Possui solicitações anteriores",
+      "description": "Indica se o cliente possui registros na base de solicitações anteriores.",
+      "type": "binary",
+      "format": "boolean",
+      "unit": null,
+      "source": "derivada da presença de sk_id_curr em previous_application",
+      "value_semantics": "0 = sem histórico observado; 1 = com histórico observado.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "bureau_avg_days_credit": {
+      "label": "Tempo médio dos créditos no bureau",
+      "description": "Média do número de dias entre a concessão dos créditos registrados no bureau e a solicitação atual.",
+      "type": "numeric",
+      "format": "days_before_application",
+      "unit": "dias",
+      "source": "média de bureau.days_credit por sk_id_curr",
+      "value_semantics": "Valores negativos representam créditos anteriores à solicitação; quanto mais próximo de zero, mais recentes em média. Sem histórico, recebe 0 e deve ser interpretado junto com has_bureau.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "bureau_last_days_credit": {
+      "label": "Tempo desde o crédito mais recente no bureau",
+      "description": "Número de dias do crédito mais recente registrado no bureau em relação à solicitação atual.",
+      "type": "numeric",
+      "format": "days_before_application",
+      "unit": "dias",
+      "source": "máximo de bureau.days_credit por sk_id_curr",
+      "value_semantics": "Valores negativos representam créditos anteriores à solicitação; quanto mais próximo de zero, mais recente. Sem histórico, recebe 0 e deve ser interpretado junto com has_bureau.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "bureau_active_rate": {
+      "label": "Proporção de créditos ativos no bureau",
+      "description": "Proporção dos créditos do cliente no bureau que estão com status ativo.",
+      "type": "numeric",
+      "format": "percentage",
+      "unit": "proporção",
+      "source": "agregada de bureau.credit_active por sk_id_curr",
+      "calculation": "quantidade de créditos ativos / quantidade de créditos no bureau",
+      "value_semantics": "Varia de 0 a 1. Sem histórico, recebe 0 e deve ser interpretada junto com has_bureau.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "bureau_active_count": {
+      "label": "Quantidade de créditos ativos no bureau",
+      "description": "Quantidade de créditos do cliente registrados no bureau com status ativo.",
+      "type": "numeric",
+      "format": "integer",
+      "unit": "créditos",
+      "source": "contagem condicional de bureau.credit_active por sk_id_curr",
+      "value_semantics": "Contagem. Sem histórico, recebe 0 e deve ser interpretada junto com has_bureau.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "bureau_closed_rate": {
+      "label": "Proporção de créditos encerrados no bureau",
+      "description": "Proporção dos créditos do cliente no bureau que estão com status encerrado.",
+      "type": "numeric",
+      "format": "percentage",
+      "unit": "proporção",
+      "source": "agregada de bureau.credit_active por sk_id_curr",
+      "calculation": "quantidade de créditos encerrados / quantidade de créditos no bureau",
+      "value_semantics": "Varia de 0 a 1. Sem histórico, recebe 0 e deve ser interpretada junto com has_bureau.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "bureau_debt_credit_ratio": {
+      "label": "Relação entre dívida e crédito no bureau",
+      "description": "Razão entre a dívida total e o crédito total registrados no bureau para o cliente.",
+      "type": "numeric",
+      "format": "ratio",
+      "unit": "razão",
+      "source": "agregada de bureau.amt_credit_sum_debt e bureau.amt_credit_sum por sk_id_curr",
+      "calculation": "soma de amt_credit_sum_debt / soma de amt_credit_sum",
+      "value_semantics": "Sem crédito total válido ou sem histórico, recebe 0 e deve ser interpretada junto com has_bureau.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "bureau_overdue_count": {
+      "label": "Quantidade de créditos em atraso no bureau",
+      "description": "Quantidade de créditos do cliente no bureau que possuem pelo menos um dia de atraso.",
+      "type": "numeric",
+      "format": "integer",
+      "unit": "créditos",
+      "source": "contagem de bureau.credit_day_overdue > 0 por sk_id_curr",
+      "value_semantics": "Contagem. Sem histórico, recebe 0 e deve ser interpretada junto com has_bureau.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "has_bureau": {
+      "label": "Possui histórico no bureau",
+      "description": "Indica se o cliente possui registros na base do bureau de crédito.",
+      "type": "binary",
+      "format": "boolean",
+      "unit": null,
+      "source": "derivada da presença de sk_id_curr em bureau",
+      "value_semantics": "0 = sem histórico observado; 1 = com histórico observado.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "inst_late_payment_rate": {
+      "label": "Taxa de parcelas pagas com atraso",
+      "description": "Proporção das parcelas históricas válidas do cliente cujo pagamento ocorreu depois da data prevista.",
+      "type": "numeric",
+      "format": "percentage",
+      "unit": "proporção",
+      "source": "agregada de installments_payments.days_entry_payment e days_instalment por sk_id_curr",
+      "calculation": "média do indicador days_entry_payment - days_instalment > 0",
+      "value_semantics": "Varia de 0 a 1. Sem histórico, recebe 0 e deve ser interpretada junto com has_installments_history.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "has_installments_history": {
+      "label": "Possui histórico de parcelas",
+      "description": "Indica se o cliente possui registros válidos na base histórica de pagamentos de parcelas.",
+      "type": "binary",
+      "format": "boolean",
+      "unit": null,
+      "source": "derivada da presença de sk_id_curr em installments_payments após filtros de validade",
+      "value_semantics": "0 = sem histórico observado; 1 = com histórico observado.",
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "occupation_type": {
+      "label": "Tipo de ocupação",
+      "description": "Categoria da ocupação informada pelo cliente.",
+      "type": "categorical",
+      "format": "category",
+      "unit": null,
+      "source": "application_train.occupation_type",
+      "value_semantics": "Categorias originais são preservadas; valores ausentes são representados por 'Unknown'.",
+      "special_values": {
+        "Unknown": "Ocupação não informada."
+      },
+      "sensitive": true,
+      "allowed_in_report": false,
+      "governance_note": "O notebook de exploração identifica a ocupação como atributo sensível ou possível proxy socioeconômica. Pode ser usada em auditoria de viés, mas não como justificativa apresentada pelo agente."
+    },
+    "organization_type": {
+      "label": "Tipo de organização empregadora",
+      "description": "Categoria da organização onde o cliente trabalha.",
+      "type": "categorical",
+      "format": "category",
+      "unit": null,
+      "source": "application_train.organization_type",
+      "value_semantics": "Categorias com frequência inferior ao limite do pipeline são agrupadas como 'Other_low_freq'.",
+      "special_values": {
+        "Other_low_freq": "Categoria original agrupada por baixa frequência.",
+        "XNA": "Valor especial presente na fonte Home Credit."
+      },
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "name_income_type": {
+      "label": "Tipo de renda",
+      "description": "Categoria da principal origem ou situação de renda do cliente.",
+      "type": "categorical",
+      "format": "category",
+      "unit": null,
+      "source": "application_train.name_income_type",
+      "value_semantics": "Categorias com frequência inferior ao limite do pipeline são agrupadas como 'Other_low_freq'.",
+      "special_values": {
+        "Other_low_freq": "Categoria original agrupada por baixa frequência."
+      },
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "name_education_type": {
+      "label": "Nível de escolaridade",
+      "description": "Maior nível de escolaridade informado pelo cliente.",
+      "type": "categorical",
+      "format": "category",
+      "unit": null,
+      "source": "application_train.name_education_type",
+      "value_semantics": "Categorias seguem os valores da fonte; ausências, se existentes, são representadas por 'Unknown'.",
+      "special_values": {
+        "Unknown": "Escolaridade não informada."
+      },
+      "sensitive": false,
+      "allowed_in_report": true
+    },
+    "code_gender": {
+      "label": "Gênero cadastrado",
+      "description": "Gênero registrado para o cliente na fonte de dados.",
+      "type": "categorical",
+      "format": "category",
+      "unit": null,
+      "source": "application_train.code_gender",
+      "value_semantics": "F = feminino; M = masculino; 'Unknown' representa valor ausente ou o código XNA da fonte.",
+      "special_values": {
+        "F": "Feminino.",
+        "M": "Masculino.",
+        "Unknown": "Não informado ou código XNA na fonte."
+      },
+      "sensitive": true,
+      "allowed_in_report": false,
+      "governance_note": "O notebook de exploração identifica gênero como atributo sensível. Pode ser usado em auditoria de fairness, mas não como justificativa apresentada pelo agente."
+    }
+  }
+}
