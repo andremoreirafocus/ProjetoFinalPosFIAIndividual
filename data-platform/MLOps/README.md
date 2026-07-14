@@ -384,13 +384,18 @@ MLOps/.venv/bin/python -m unittest discover -s MLOps/tests -v
 
 | Arquivo | Responsabilidade validada |
 |---|---|
-| `test_credit_policy.py` | Faixas de aprovação, revisão, rejeição e limites inválidos. |
-| `test_model_service.py` | Score válido e rejeição de features ausentes. |
-| `test_predict.py` | Inferência pelo script local e contrato do resultado. |
+| `test_credit_policy.py` | Faixas de aprovação, revisão, rejeição, limites inválidos e score fora de `[0, 1]`. |
+| `test_config.py` | Validação dos limiares da política e do intervalo de retry em `Settings`. |
+| `test_model_service.py` | Carga do artefato (sucesso e erros), predição, restauração de categóricas e rejeição de features ausentes. |
+| `test_feature_service.py` | Recuperação da ABT, cliente inexistente e normalização de tipos. |
+| `test_api_endpoints.py` | Contratos HTTP e erros dos endpoints (`200/404/422/503`) via `TestClient`. |
 | `test_frontend.py` | Inicialização da aplicação Streamlit. |
+| `test_predict.py` | Inferência pelo script local e contrato do resultado. |
 | `test_configuration.py` | Coerência entre as features declaradas na configuração do modelo e as persistidas no artefato (proteção contra divergência). |
 
-Os testes de predição (`test_model_service.py` e `test_predict.py`) constroem uma entrada válida a partir do próprio contrato do artefato (`tests/sample_features.py`) e executam o modelo real, sem depender de banco de dados nem de arquivos de amostra — a suíte roda offline, bastando o artefato treinado.
+Os testes da API usam apenas **fakes** e **fixtures** (`tests/fakes.py`, `tests/fixtures.py`) — nunca `monkeypatch` ou interceptação de código —, injetados por composição: `FakeModel`, engine SQLite em memória para a ABT e serviços fakes no `app.state`. Assim, a suíte da API roda **offline**, sem banco, sem LightGBM e sem o artefato treinado.
+
+Os testes de integração `test_predict.py` e `test_configuration.py` executam o modelo real e são **pulados automaticamente** (`skipUnless`) quando o artefato `lightgbm_abt.pkl` ou o LightGBM não estão disponíveis; `test_frontend.py` é pulado se o Streamlit não estiver instalado.
 
 ## Limitações conhecidas
 

@@ -1,3 +1,4 @@
+import importlib.util
 import unittest
 from pathlib import Path
 
@@ -8,8 +9,16 @@ from MLOps.tests.sample_features import build_features_from_artifact
 
 
 DATA_PLATFORM_DIR = Path(__file__).resolve().parents[2]
+ARTIFACT_PATH = DATA_PLATFORM_DIR / "Model" / "artifacts" / "lightgbm_abt.pkl"
+ARTIFACT_READY = (
+    ARTIFACT_PATH.is_file() and importlib.util.find_spec("lightgbm") is not None
+)
 
 
+@unittest.skipUnless(
+    ARTIFACT_READY,
+    "Teste de integração: requer o artefato lightgbm_abt.pkl e o LightGBM instalado.",
+)
 class PredictScriptTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

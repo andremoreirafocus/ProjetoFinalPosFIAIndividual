@@ -23,6 +23,12 @@ class CreditPolicyTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             CreditPolicy(0.70, 0.60, "invalid")
 
+    def test_score_out_of_range_is_rejected(self) -> None:
+        for score in (-0.1, 1.1):
+            with self.subTest(score=score):
+                with self.assertRaises(ValueError):
+                    self.policy.evaluate(score)
+
 
 if __name__ == "__main__":
     unittest.main()
