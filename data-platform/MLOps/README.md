@@ -389,6 +389,7 @@ MLOps/.venv/bin/python -m unittest discover -s MLOps/tests -v
 | `test_model_service.py` | Carga do artefato (sucesso e erros), predição, restauração de categóricas e rejeição de features ausentes. |
 | `test_feature_service.py` | Recuperação da ABT, cliente inexistente e normalização de tipos. |
 | `test_api_endpoints.py` | Contratos HTTP e erros dos endpoints (`200/404/422/503`) via `TestClient`. |
+| `test_model_loading.py` | Carga do modelo em segundo plano com retry (ramos de falha e de sucesso). |
 | `test_frontend.py` | Inicialização da aplicação Streamlit. |
 | `test_predict.py` | Inferência pelo script local e contrato do resultado. |
 | `test_configuration.py` | Coerência entre as features declaradas na configuração do modelo e as persistidas no artefato (proteção contra divergência). |
