@@ -96,6 +96,25 @@ class PredictionServicePredictTest(unittest.TestCase):
         # Feature não-categórica é convertida para numérico.
         self.assertTrue(pd.api.types.is_numeric_dtype(received["ext_source_1"]))
 
+    def test_explain_returns_ranked_local_shap_contributions(self) -> None:
+        service = self._loaded_service(FakeModel())
+        explanation = service.explain(
+            {"ext_source_1": 0.5, "occupation_type": "Managers"}
+        )
+
+        self.assertEqual(explanation["base_value"], -0.4)
+        self.assertEqual(explanation["output_scale"], "raw_score")
+        self.assertEqual(
+            [factor["feature"] for factor in explanation["top_factors"]],
+            ["ext_source_1", "occupation_type"],
+        )
+        self.assertEqual(
+            explanation["top_factors"][0]["direction"], "increases_risk"
+        )
+        self.assertEqual(
+            explanation["top_factors"][1]["direction"], "reduces_risk"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

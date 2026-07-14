@@ -227,6 +227,9 @@ def _predict(
         ) from error
 
     policy_decision = credit_policy.evaluate(risk_score)
+    explanation = None
+    if policy_decision.recommendation == "manual_review":
+        explanation = prediction_service.explain(features)
 
     return PredictionResponse(
         source=source,
@@ -235,4 +238,5 @@ def _predict(
         predicted_class=predicted_class,
         model_decision_threshold=prediction_service.decision_threshold,
         policy=asdict(policy_decision),
+        explanation=explanation,
     )

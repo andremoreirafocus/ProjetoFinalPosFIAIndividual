@@ -99,6 +99,8 @@ class ApiEndpointsTest(unittest.TestCase):
         # 0.55 cai na faixa [0.50, 0.60) -> revisão manual.
         self.assertEqual(body["policy"]["recommendation"], "manual_review")
         self.assertEqual(body["policy"]["policy_version"], "test-v1")
+        self.assertIsNotNone(body["explanation"])
+        self.assertEqual(body["explanation"]["output_scale"], "raw_score")
 
     def test_predict_from_features_missing_returns_422(self) -> None:
         client = self._client(
@@ -133,6 +135,7 @@ class ApiEndpointsTest(unittest.TestCase):
         self.assertEqual(body["customer_id"], 100002)
         # 0.20 < 0.50 -> aprovação.
         self.assertEqual(body["policy"]["recommendation"], "approve")
+        self.assertIsNone(body["explanation"])
 
     def test_predict_from_database_not_found_returns_404(self) -> None:
         client = self._client(feature_service=FakeFeatureService(features=None))

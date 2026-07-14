@@ -25,11 +25,19 @@ class FakeModel:
     def __init__(self, positive_proba: float = 0.6) -> None:
         self.positive_proba = positive_proba
         self.received: Any = None
+        self.booster_ = self
 
     def predict_proba(self, features: Any) -> np.ndarray:
         self.received = features
         p = self.positive_proba
         return np.array([[1.0 - p, p]])
+
+    def predict(self, features: Any, pred_contrib: bool = False) -> np.ndarray:
+        self.received = features
+        if not pred_contrib:
+            raise ValueError("FakeModel suporta apenas pred_contrib=True neste método.")
+        # Uma contribuição por feature e o valor-base na última coluna.
+        return np.array([[0.25, -0.10, -0.40]])
 
 
 class FakePredictionService:
@@ -47,6 +55,7 @@ class FakePredictionService:
         score: float = 0.55,
         predicted_class: int = 1,
         missing: list[str] | None = None,
+        explanation: dict[str, Any] | None = None,
     ) -> None:
         self._loaded = loaded
         self._features = features or ["ext_source_1", "occupation_type"]
@@ -54,6 +63,11 @@ class FakePredictionService:
         self._score = score
         self._class = predicted_class
         self._missing = missing
+        self._explanation = explanation or {
+            "base_value": -0.4,
+            "output_scale": "raw_score",
+            "top_factors": [],
+        }
         self.model_path = "/fake/model.pkl"
 
     @property
@@ -72,6 +86,9 @@ class FakePredictionService:
         if self._missing is not None:
             raise ModelInputError(self._missing)
         return self._score, self._class
+
+    def explain(self, features: dict[str, Any]) -> dict[str, Any]:
+        return dict(self._explanation)
 
 
 class FakeFeatureService:

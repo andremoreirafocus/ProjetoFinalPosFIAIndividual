@@ -24,6 +24,19 @@ class CreditPolicyResult(BaseModel):
     manual_review_max_score: float
 
 
+class ShapFactor(BaseModel):
+    feature: str
+    value: Any
+    shap_value: float
+    direction: Literal["increases_risk", "reduces_risk"]
+
+
+class LocalExplanation(BaseModel):
+    base_value: float
+    output_scale: Literal["raw_score"]
+    top_factors: list[ShapFactor]
+
+
 class PredictionResponse(BaseModel):
     source: Literal["provided_features", "database"]
     customer_id: int | None = None
@@ -31,6 +44,7 @@ class PredictionResponse(BaseModel):
     predicted_class: int = Field(ge=0, le=1)
     model_decision_threshold: float = Field(ge=0, le=1)
     policy: CreditPolicyResult
+    explanation: LocalExplanation | None = None
 
 
 class HealthResponse(BaseModel):

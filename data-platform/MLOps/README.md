@@ -312,11 +312,30 @@ O exemplo é abreviado para leitura; uma chamada válida deve incluir todas as f
     "policy_version": "demo-v1",
     "approve_max_score": 0.50,
     "manual_review_max_score": 0.60
+  },
+  "explanation": {
+    "base_value": -1.42,
+    "output_scale": "raw_score",
+    "top_factors": [
+      {
+        "feature": "inst_late_payment_rate",
+        "value": 0.27,
+        "shap_value": 0.42,
+        "direction": "increases_risk"
+      }
+    ]
   }
 }
 ```
 
 `source` informa se a pontuação veio do formulário ou do banco. Quando a consulta parte de um cliente armazenado, `customer_id` permite associar o resultado à origem. O campo `reason` traz uma justificativa legível da faixa aplicada (abaixo do limite de aprovação, faixa intermediária de revisão ou acima do limite de rejeição); o texto exato é definido pela política em `credit_policy.py` e pode variar.
+
+Quando a política retorna `manual_review`, a API também calcula as contribuições
+TreeSHAP locais do LightGBM e inclui `explanation`. Os fatores são ordenados pelo
+valor absoluto da contribuição. Valores positivos aumentam o risco estimado e
+valores negativos o reduzem. `base_value` e `shap_value` estão na escala bruta do
+modelo, não em pontos percentuais de probabilidade. Nas demais faixas,
+`explanation` é `null`.
 
 ## Jornadas do frontend
 
