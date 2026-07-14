@@ -187,28 +187,61 @@ Para execução local fora de containers, também é necessário Python compatí
 ## Configuração inicial
 
 O Docker Compose lê automaticamente o arquivo `data-platform/.env`, localizado no
-mesmo diretório de `docker-compose.yml`. Antes de iniciar os serviços, crie ou
-revise esse arquivo com as configurações locais da plataforma:
+mesmo diretório de `docker-compose.yml`. **Todas** as variáveis e credenciais dos
+serviços foram externalizadas para esse arquivo — o `docker-compose.yml` não
+contém mais valores fixos, apenas referências `${VARIÁVEL}` interpoladas a partir
+do `.env`. Por ser um repositório acadêmico/público, o `.env` já está versionado
+com valores de demonstração; basta revisá-lo caso queira trocar portas, senhas ou
+o token do Jupyter:
 
 ```dotenv
-# Obrigatória: token solicitado no acesso ao JupyterLab
-JUPYTER_TOKEN=defina-um-token-local
+# Postgres (credenciais e nomes dos bancos)
+POSTGRES_USER=airflow
+POSTGRES_PASSWORD=airflow
+POSTGRES_DB=airflow
+POSTGRES_DATA_DB=data
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
 
-# Obrigatórias: limites da política de decisão de crédito
+# Airflow (segurança e usuário admin)
+AIRFLOW_SECRET_KEY=tcc_fia_labdata_engenharia_dados
+AIRFLOW_FERNET_KEY=7777777777777777777777777777777777777777777=
+AIRFLOW_ADMIN_USERNAME=admin
+AIRFLOW_ADMIN_PASSWORD=admin
+AIRFLOW_ADMIN_FIRSTNAME=Admin
+AIRFLOW_ADMIN_LASTNAME=User
+AIRFLOW_ADMIN_ROLE=Admin
+AIRFLOW_ADMIN_EMAIL=admin@example.com
+POOL_INGESTAO_SIZE=2
+POOL_SANITIZATION_SIZE=2
+POOL_AGGREGATION_SIZE=2
+
+# Jupyter
+JUPYTER_TOKEN=analytics
+
+# Credit API
+MODEL_PATH=/app/Model/artifacts/lightgbm_abt.pkl
+MODEL_LOAD_RETRY_SECONDS=5
+CREDIT_POLICY_VERSION=demo-v1
 CREDIT_APPROVE_MAX_SCORE=0.50
 CREDIT_MANUAL_REVIEW_MAX_SCORE=0.60
-
-# Opcionais: carga do modelo e portas publicadas no computador hospedeiro
-MODEL_LOAD_RETRY_SECONDS=5
-CREDIT_API_PORT=8000
-CREDIT_FRONTEND_PORT=8501
 ```
 
 ### Variáveis utilizadas pela composição
 
 | Variável | Obrigatoriedade | Finalidade | Padrão |
 |---|---|---|---:|
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` | Obrigatórias | Credenciais do PostgreSQL, reutilizadas nas connection strings do Airflow e da API. | Sem padrão |
+| `POSTGRES_DB` | Obrigatória | Banco de metadados do Airflow. | Sem padrão |
+| `POSTGRES_DATA_DB` | Obrigatória | Banco analítico (fontes, tabelas tratadas e ABT). | Sem padrão |
+| `POSTGRES_HOST` / `POSTGRES_PORT` | Obrigatórias | Host e porta internos usados para montar as connection strings. | Sem padrão |
+| `AIRFLOW_SECRET_KEY` | Obrigatória | Chave do webserver, compartilhada entre os serviços do Airflow. | Sem padrão |
+| `AIRFLOW_FERNET_KEY` | Obrigatória | Chave de criptografia de conexões e variáveis do Airflow. | Sem padrão |
+| `AIRFLOW_ADMIN_*` | Obrigatórias | Dados do usuário admin criado na inicialização (`USERNAME`, `PASSWORD`, `FIRSTNAME`, `LASTNAME`, `ROLE`, `EMAIL`). | Sem padrão |
+| `POOL_INGESTAO_SIZE` / `POOL_SANITIZATION_SIZE` / `POOL_AGGREGATION_SIZE` | Obrigatórias | Tamanho dos pools do Airflow que limitam o paralelismo por etapa da DAG. | Sem padrão |
 | `JUPYTER_TOKEN` | Obrigatória | Token usado para autenticar o acesso ao JupyterLab. | Sem padrão |
+| `MODEL_PATH` | Obrigatória | Caminho do artefato do modelo dentro do container da API. | Sem padrão |
+| `CREDIT_POLICY_VERSION` | Obrigatória | Versão declarada da política de crédito, retornada nas respostas da API. | Sem padrão |
 | `CREDIT_APPROVE_MAX_SCORE` | Obrigatória | Limite superior da aprovação automática. Scores abaixo desse valor recebem recomendação de aprovação. | Sem padrão |
 | `CREDIT_MANUAL_REVIEW_MAX_SCORE` | Obrigatória | Limite superior da análise manual. Scores a partir desse valor recebem recomendação de rejeição. | Sem padrão |
 | `MODEL_LOAD_RETRY_SECONDS` | Opcional | Intervalo entre tentativas de carregamento do artefato. Enquanto o modelo não estiver disponível, a API permanece ativa e `/health` responde `503`. | `5` segundos |
@@ -221,14 +254,10 @@ valores do exemplo, scores abaixo de `0.50` são aprovados automaticamente, scor
 entre `0.50` e `0.60` seguem para análise humana e scores a partir de `0.60`
 recebem recomendação de rejeição.
 
-O token do Jupyter deve ser substituído por um valor próprio, especialmente em
-ambientes compartilhados. Não publique tokens ou credenciais reais no
-repositório.
-
-> **Importante:** as credenciais do PostgreSQL, os bancos do Airflow e do
-> Metabase e a conexão interna do Airflow estão atualmente declarados diretamente
-> em `docker-compose.yml`. Variáveis de nomes semelhantes adicionadas ao `.env`
-> não alteram esses serviços enquanto a composição não fizer referência a elas.
+> **Importante:** os valores versionados no `.env` são apenas de demonstração,
+> internos e sem valor em produção — por isso o arquivo é exposto propositalmente
+> neste contexto acadêmico. Em um ambiente real, o `.env` **não** deve ser
+> versionado e as credenciais devem ser substituídas por segredos próprios.
 
 Para conferir a substituição das variáveis e visualizar a configuração final sem
 iniciar os containers:
