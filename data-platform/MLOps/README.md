@@ -370,6 +370,14 @@ taxas geral e por target; categóricas recebem contagem, frequência e taxa
 histórica de inadimplência. O impacto SHAP local é situado entre os percentis da
 distribuição global de impacto absoluto daquela feature.
 
+Esse enriquecimento foi implementado para disponibilizar ao futuro agente uma
+entrada quantitativa pronta e reproduzível. O `train.py` produz as referências
+populacionais versionadas; o `ExplanationService` combina essas referências com
+o SHAP local do cliente; e a resposta da API passa a conter as evidências que
+serão transportadas ao agente. O agente não deverá consultar a base de treino nem
+refazer esses cálculos. A continuidade desse fluxo está descrita em
+[Arquitetura proposta para o agente de revisão de crédito](AGENT_ARCHITECTURE.md).
+
 ## Jornadas do frontend
 
 O Streamlit implementa três formas de demonstração:
@@ -476,17 +484,15 @@ O objetivo é detectar **falhas, perda de performance e mudança de comportament
 
 ### iv. Ações automatizadas a partir das previsões
 
-As predições podem **acionar ações** de negócio, conectando ML, automação e agentes de IA:
+Os casos classificados como `manual_review` podem acionar, de forma assíncrona, um agente de IA que combina a explicação técnica produzida pela API com o catálogo semântico das features. O resultado é um relatório de apoio ao analista, sem recalcular o risco, alterar a recomendação da política ou substituir a decisão humana.
 
-- **roteamento automático** do pedido conforme a faixa da política (aprovação direta, fila de revisão humana, recusa justificada);
-- **priorização da fila** de análise pelos casos de maior risco/valor;
-- **agente de IA** que compõe um resumo explicável da decisão (drivers SHAP + política aplicada) para o analista;
-- **gatilho de re-treino** aberto automaticamente quando um alerta de drift ou queda de performance dispara.
+As referências geradas no treinamento e o enriquecimento realizado pelo `ExplanationService` já foram implementados com essa finalidade: entregar ao agente informações quantitativas calculadas, comparáveis e vinculadas à mesma versão do modelo.
 
-Essas ações permanecem **sob supervisão humana**: o modelo ordena risco e recomenda; a concessão final segue a política e a análise do analista.
+A proposta completa — incluindo separação de responsabilidades, comunicação por RabbitMQ, governança, persistência e fluxo de revisão — está documentada em [Arquitetura proposta para o agente de revisão de crédito](AGENT_ARCHITECTURE.md).
 
 ## Componentes relacionados
 
+- [Arquitetura proposta para o agente de revisão de crédito](AGENT_ARCHITECTURE.md)
 - [Modelo](../Model/README.md)
 - [PostgreSQL](../postgres/README.md)
 - [Airflow](../airflow/README.md)
