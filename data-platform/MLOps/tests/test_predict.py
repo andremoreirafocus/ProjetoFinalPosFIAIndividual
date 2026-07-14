@@ -1,7 +1,10 @@
 import unittest
 from pathlib import Path
 
-from Model.predict import load_artifact, load_features, predict
+import pandas as pd
+
+from Model.predict import load_artifact, predict_score
+from MLOps.tests.sample_features import build_features_from_artifact
 
 
 DATA_PLATFORM_DIR = Path(__file__).resolve().parents[2]
@@ -11,12 +14,13 @@ class PredictScriptTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.artifact = load_artifact(
-            DATA_PLATFORM_DIR / "Model" / "artifacts" / "logistic_regression_abt.pkl"
+            DATA_PLATFORM_DIR / "Model" / "artifacts" / "lightgbm_abt.pkl"
         )
 
-    def test_predicts_csv_row(self) -> None:
-        features = load_features(DATA_PLATFORM_DIR / "Dados" / "abt.csv")
-        result = predict(features, self.artifact)
+    def test_predicts_single_row(self) -> None:
+        features = build_features_from_artifact(self.artifact)
+        row = pd.DataFrame([features])
+        result = predict_score(row, self.artifact)
 
         self.assertGreaterEqual(result["risk_score"], 0)
         self.assertLessEqual(result["risk_score"], 1)

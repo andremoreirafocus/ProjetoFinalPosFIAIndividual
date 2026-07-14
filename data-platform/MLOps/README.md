@@ -135,8 +135,8 @@ MLOps/
 |---|---|---|
 | `MODEL_PATH` | Caminho do artefato LightGBM | `/app/Model/artifacts/lightgbm_abt.pkl` |
 | `DATABASE_URL` | Conexão com o banco `data` | PostgreSQL do Compose |
-| `CREDIT_APPROVE_MAX_SCORE` | Limite superior para aprovação | `0.35` |
-| `CREDIT_MANUAL_REVIEW_MAX_SCORE` | Limite superior para revisão manual | `0.65` |
+| `CREDIT_APPROVE_MAX_SCORE` | Limite superior para aprovação | `0.50` |
+| `CREDIT_MANUAL_REVIEW_MAX_SCORE` | Limite superior para revisão manual | `0.60` |
 | `CREDIT_POLICY_VERSION` | Identificador da política | `demo-v1` |
 | `CREDIT_API_URL` | URL consumida pelo frontend | `http://credit-api:8000` |
 
@@ -303,20 +303,20 @@ O exemplo é abreviado para leitura; uma chamada válida deve incluir todas as f
 {
   "source": "provided_features",
   "customer_id": null,
-  "risk_score": 0.42,
-  "predicted_class": 0,
+  "risk_score": 0.55,
+  "predicted_class": 1,
   "model_decision_threshold": 0.5,
   "policy": {
     "recommendation": "manual_review",
-    "reason": "Score na faixa intermediária; requer análise humana.",
+    "reason": "Score de risco na faixa intermediária.",
     "policy_version": "demo-v1",
-    "approve_max_score": 0.35,
-    "manual_review_max_score": 0.65
+    "approve_max_score": 0.50,
+    "manual_review_max_score": 0.60
   }
 }
 ```
 
-`source` informa se a pontuação veio do formulário ou do banco. Quando a consulta parte de um cliente armazenado, `customer_id` permite associar o resultado à origem.
+`source` informa se a pontuação veio do formulário ou do banco. Quando a consulta parte de um cliente armazenado, `customer_id` permite associar o resultado à origem. O campo `reason` traz uma justificativa legível da faixa aplicada (abaixo do limite de aprovação, faixa intermediária de revisão ou acima do limite de rejeição); o texto exato é definido pela política em `credit_policy.py` e pode variar.
 
 ## Jornadas do frontend
 
@@ -340,7 +340,7 @@ Em todas as jornadas, o frontend exibe score, classe, origem, threshold do model
 
 ### API
 
-`Dockerfile.api` instala somente as dependências da API, copia `MLOps` e os artefatos de `Model/artifacts`, define `MODEL_PATH` e inicia Uvicorn na porta 8000.
+`Dockerfile.api` instala somente as dependências da API, copia o código de `MLOps`, define `MODEL_PATH` e inicia Uvicorn na porta 8000. O artefato **não** é embutido na imagem: ele é lido em tempo de execução de um volume Docker (`./Model/artifacts`, montado como somente leitura em `credit-api`) — a mesma pasta onde o `train.py` da pipeline de dados grava `lightgbm_abt.pkl` logo após um treinamento bem-sucedido. Assim, o serviço e o treinamento ficam desacoplados: um novo treino atualiza o artefato no volume e a carga com retry o incorpora, sem reconstruir a imagem.
 
 ### Frontend
 
@@ -372,10 +372,13 @@ CREDIT_API_URL=http://localhost:8000 \
 
 ```bash
 cd data-platform
+python3 -m venv MLOps/.venv
 MLOps/.venv/bin/python -m pip install -r MLOps/test-requirements.txt
 MLOps/.venv/bin/python -m pip install -r MLOps/app/frontend/requirements.txt
 MLOps/.venv/bin/python -m unittest discover -s MLOps/tests -v
 ```
+
+`test-requirements.txt` já inclui as dependências da API; a instalação dos requisitos do frontend cobre `test_frontend.py`. Reaproveite a mesma `MLOps/.venv` da seção *Execução local*, se já existir.
 
 ### Cobertura dos testes existentes
 
@@ -385,7 +388,9 @@ MLOps/.venv/bin/python -m unittest discover -s MLOps/tests -v
 | `test_model_service.py` | Score válido e rejeição de features ausentes. |
 | `test_predict.py` | Inferência pelo script local e contrato do resultado. |
 | `test_frontend.py` | Inicialização da aplicação Streamlit. |
-| `test_configuration.py` | Estrutura esperada e coerência entre configuração e artefato. |
+| `test_configuration.py` | Coerência entre as features declaradas na configuração do modelo e as persistidas no artefato (proteção contra divergência). |
+
+Os testes de predição (`test_model_service.py` e `test_predict.py`) constroem uma entrada válida a partir do próprio contrato do artefato (`tests/sample_features.py`) e executam o modelo real, sem depender de banco de dados nem de arquivos de amostra — a suíte roda offline, bastando o artefato treinado.
 
 ## Limitações conhecidas
 
@@ -394,7 +399,7 @@ MLOps/.venv/bin/python -m unittest discover -s MLOps/tests -v
 - não há autenticação ou autorização nos endpoints;
 - requisições e respostas não são persistidas em armazenamento de auditoria;
 - a API depende da disponibilidade da ABT no PostgreSQL;
-- o artefato é empacotado na imagem e não obtido de um model registry;
+- o artefato é entregue à API por volume compartilhado, e não por um *model registry* versionado;
 - não há monitoramento contínuo de drift, latência ou performance pós-deploy.
 
 ## Próximos passos

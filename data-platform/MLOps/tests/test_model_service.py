@@ -1,9 +1,8 @@
 import unittest
 from pathlib import Path
 
-import pandas as pd
-
 from MLOps.app.api.model_service import ModelInputError, PredictionService
+from MLOps.tests.sample_features import build_features_from_artifact
 
 
 DATA_PLATFORM_DIR = Path(__file__).resolve().parents[2]
@@ -13,14 +12,10 @@ class PredictionServiceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.service = PredictionService(
-            DATA_PLATFORM_DIR / "Model" / "artifacts" / "logistic_regression_abt.pkl"
+            DATA_PLATFORM_DIR / "Model" / "artifacts" / "lightgbm_abt.pkl"
         )
         cls.service.load()
-        abt = pd.read_csv(
-            DATA_PLATFORM_DIR / "Dados" / "abt.csv",
-            nrows=1,
-        )
-        cls.features = abt.drop(columns=["sk_id_curr", "target"]).iloc[0].to_dict()
+        cls.features = build_features_from_artifact(cls.service.artifact)
 
     def test_prediction_is_valid(self) -> None:
         score, predicted_class = self.service.predict(self.features)
