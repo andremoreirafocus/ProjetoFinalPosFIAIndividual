@@ -4,6 +4,8 @@ from contextlib import suppress
 from dataclasses import asdict
 import json
 import logging
+from pathlib import Path
+from threading import RLock
 
 from fastapi import FastAPI, HTTPException, Request
 from sqlalchemy import create_engine
@@ -44,12 +46,16 @@ async def lifespan(app: FastAPI):
     app.state.feature_service = feature_service
     app.state.credit_policy = credit_policy
     app.state.model_load_error = None
+    app.state.model_bundle_signature = None
+    app.state.model_bundle_lock = RLock()
+    app.state.model_bundle_auto_refresh = True
 
     model_load_task = asyncio.create_task(
         _load_model_with_retry(
             app,
             prediction_service,
             settings.model_load_retry_seconds,
+            explanation_service,
         )
     )
 
@@ -66,10 +72,16 @@ async def _load_model_with_retry(
     app: FastAPI,
     service: PredictionService,
     retry_seconds: float,
+    explanation_service: ExplanationService | None = None,
 ) -> None:
     while not service.is_loaded:
         try:
-            await asyncio.to_thread(service.load)
+            if explanation_service is None:
+                await asyncio.to_thread(service.load)
+            else:
+                await asyncio.to_thread(
+                    _refresh_model_bundle, app, service, explanation_service
+                )
         except Exception as error:
             app.state.model_load_error = str(error)
             logger.error(
@@ -88,6 +100,73 @@ async def _load_model_with_retry(
             logger.info("Modelo carregado com sucesso: %s", service.model_path)
 
 
+def _file_signature(path: Path) -> tuple[int, int]:
+    stat = path.stat()
+    return stat.st_mtime_ns, stat.st_size
+
+
+def _bundle_signature(
+    prediction_service: PredictionService,
+    explanation_service: ExplanationService,
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    return (
+        _file_signature(prediction_service.model_path),
+        _file_signature(explanation_service.reference_path),
+    )
+
+
+def _refresh_model_bundle(
+    app: FastAPI,
+    prediction_service: PredictionService,
+    explanation_service: ExplanationService,
+) -> bool:
+    """Recarrega modelo e referências juntos quando os arquivos forem alterados."""
+    with app.state.model_bundle_lock:
+        signature_before = _bundle_signature(
+            prediction_service, explanation_service
+        )
+        if signature_before == app.state.model_bundle_signature:
+            return False
+
+        try:
+            artifact = prediction_service.read_artifact()
+            reference = explanation_service.read_reference()
+            signature_after = _bundle_signature(
+                prediction_service, explanation_service
+            )
+            if signature_before != signature_after:
+                raise RuntimeError("Os artefatos foram alterados durante a carga.")
+            if reference["model_version"] != artifact.get("config_version"):
+                raise ValueError(
+                    "A versão das referências diverge da versão do modelo."
+                )
+            if reference["trained_at_utc"] != artifact.get("trained_at_utc"):
+                raise ValueError(
+                    "O instante de treinamento das referências diverge do modelo."
+                )
+        except Exception as error:
+            app.state.model_load_error = str(error)
+            if prediction_service.is_loaded and explanation_service.reference is not None:
+                logger.warning(
+                    "Novos artefatos ainda não formam um conjunto válido; "
+                    "mantendo a versão carregada: %s",
+                    error,
+                )
+                return False
+            raise
+
+        prediction_service.artifact = artifact
+        explanation_service.reference = reference
+        app.state.model_bundle_signature = signature_after
+        app.state.model_load_error = None
+        logger.info(
+            "Modelo e referências carregados em conjunto: versão=%s, treino=%s",
+            artifact.get("config_version"),
+            artifact.get("trained_at_utc"),
+        )
+        return True
+
+
 app = FastAPI(
     title="API de Risco de Crédito",
     description=(
@@ -102,6 +181,7 @@ app = FastAPI(
 @app.get("/health", response_model=HealthResponse)
 def health(request: Request) -> HealthResponse:
     service: PredictionService = request.app.state.prediction_service
+    _refresh_or_503(request)
     if not service.is_loaded:
         raise HTTPException(
             status_code=503,
@@ -124,8 +204,10 @@ def health(request: Request) -> HealthResponse:
 @app.get("/model/features", response_model=list[str])
 def model_features(request: Request) -> list[str]:
     service: PredictionService = request.app.state.prediction_service
+    _refresh_or_503(request)
     _ensure_model_loaded(service)
-    return service.expected_features
+    with request.app.state.model_bundle_lock:
+        return service.expected_features
 
 
 @app.get("/customers/{customer_id}/features", response_model=CustomerFeaturesResponse)
@@ -194,6 +276,25 @@ def _ensure_model_loaded(service: PredictionService) -> None:
         detail="O modelo ainda não está disponível.",
     )
 
+
+def _refresh_or_503(request: Request) -> None:
+    if not getattr(request.app.state, "model_bundle_auto_refresh", False):
+        return
+    prediction_service: PredictionService = request.app.state.prediction_service
+    explanation_service: ExplanationService = request.app.state.explanation_service
+    try:
+        _refresh_model_bundle(
+            request.app, prediction_service, explanation_service
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "message": "Modelo e referências ainda não estão disponíveis.",
+                "last_error": str(error),
+            },
+        ) from error
+
 def _log_request_json(endpoint: str, payload: dict) -> None:
     print(
         f"Request JSON {endpoint}: "
@@ -212,35 +313,37 @@ def _predict(
     explanation_service: ExplanationService = request.app.state.explanation_service
     credit_policy: CreditPolicy = request.app.state.credit_policy
 
+    _refresh_or_503(request)
     _ensure_model_loaded(prediction_service)
 
-    try:
-        risk_score, predicted_class = prediction_service.predict(features)
-        print(
-            f"Predição realizada com sucesso. "
-            f"Score: {risk_score:.4f}, Classe: {predicted_class}",
-            flush=True,
+    with request.app.state.model_bundle_lock:
+        try:
+            risk_score, predicted_class = prediction_service.predict(features)
+            print(
+                f"Predição realizada com sucesso. "
+                f"Score: {risk_score:.4f}, Classe: {predicted_class}",
+                flush=True,
+            )
+        except ModelInputError as error:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": "Features obrigatórias ausentes.",
+                    "missing_features": error.missing_features,
+                },
+            ) from error
+
+        policy_decision = credit_policy.evaluate(risk_score)
+        explanation = None
+        if policy_decision.recommendation == "manual_review":
+            explanation = explanation_service.explain(features)
+
+        return PredictionResponse(
+            source=source,
+            customer_id=customer_id,
+            risk_score=risk_score,
+            predicted_class=predicted_class,
+            model_decision_threshold=prediction_service.decision_threshold,
+            policy=asdict(policy_decision),
+            explanation=explanation,
         )
-    except ModelInputError as error:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "message": "Features obrigatórias ausentes.",
-                "missing_features": error.missing_features,
-            },
-        ) from error
-
-    policy_decision = credit_policy.evaluate(risk_score)
-    explanation = None
-    if policy_decision.recommendation == "manual_review":
-        explanation = explanation_service.explain(features)
-
-    return PredictionResponse(
-        source=source,
-        customer_id=customer_id,
-        risk_score=risk_score,
-        predicted_class=predicted_class,
-        model_decision_threshold=prediction_service.decision_threshold,
-        policy=asdict(policy_decision),
-        explanation=explanation,
-    )

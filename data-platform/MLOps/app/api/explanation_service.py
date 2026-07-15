@@ -30,8 +30,8 @@ class ExplanationService:
         )
         self.reference: dict[str, Any] | None = None
 
-    def load_reference(self) -> None:
-        """Carrega e valida o baseline gerado junto com o modelo."""
+    def read_reference(self) -> dict[str, Any]:
+        """Lê e valida o baseline sem substituir a referência em memória."""
         if not self.reference_path.is_file():
             raise FileNotFoundError(
                 f"Referências do modelo não encontradas: {self.reference_path}"
@@ -42,7 +42,11 @@ class ExplanationService:
             raise ValueError(
                 f"Referências inválidas. Chaves ausentes: {sorted(missing)}"
             )
-        self.reference = reference
+        return reference
+
+    def load_reference(self) -> None:
+        """Carrega e valida o baseline gerado junto com o modelo."""
+        self.reference = self.read_reference()
 
     def explain(
         self, features: dict[str, Any], max_factors: int = 10

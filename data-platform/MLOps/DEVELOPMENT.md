@@ -60,7 +60,7 @@ docker compose logs -f credit-api credit-frontend
 
 `Dockerfile.api` instala as dependências da API, copia o código de `MLOps` e inicia Uvicorn na porta 8000.
 
-O artefato não é embutido na imagem. O diretório `./Model/artifacts` é montado como somente leitura em `/app/Model/artifacts`. Um novo treinamento atualiza os arquivos no volume sem exigir novo build, mas a API precisa ser reiniciada porque o modelo já carregado permanece em memória.
+O artefato não é embutido na imagem. O diretório `./Model/artifacts` é montado como somente leitura em `/app/Model/artifacts`. Um novo treinamento atualiza os arquivos no volume sem exigir novo build ou reinício da API: o modelo e suas referências são recarregados automaticamente quando formam um par compatível.
 
 ### Frontend
 

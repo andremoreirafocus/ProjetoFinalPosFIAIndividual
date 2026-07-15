@@ -24,7 +24,8 @@ class PredictionService:
         self.model_path = model_path
         self.artifact: dict[str, Any] | None = None
 
-    def load(self) -> None:
+    def read_artifact(self) -> dict[str, Any]:
+        """Lê e valida o artefato sem substituir o modelo em memória."""
         if not self.model_path.is_file():
             raise FileNotFoundError(f"Modelo não encontrado: {self.model_path}")
 
@@ -41,7 +42,10 @@ class PredictionService:
         if "input_features" not in artifact:
             artifact["input_features"] = artifact["features"]
 
-        self.artifact = artifact
+        return artifact
+
+    def load(self) -> None:
+        self.artifact = self.read_artifact()
 
     @property
     def is_loaded(self) -> bool:

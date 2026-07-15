@@ -79,7 +79,7 @@ Model/artifacts/
 └── model_comparison.csv
 ```
 
-O diretório é compartilhado entre os containers por *bind mounts*. Cada treinamento sobrescreve os arquivos, sem histórico físico de versões ou *model registry*. Depois de um novo treinamento, é necessário reiniciar `credit-api`, pois o retry da carga inicial não realiza *hot reload*.
+O diretório é compartilhado entre os containers por *bind mounts*. Cada treinamento sobrescreve os arquivos, sem histórico físico de versões ou *model registry*. A API verifica os arquivos a cada requisição e recarrega automaticamente o modelo e suas referências quando os dois pertencem ao mesmo treinamento; durante uma atualização parcial, mantém em memória a última versão válida.
 
 ## Limitações atuais
 

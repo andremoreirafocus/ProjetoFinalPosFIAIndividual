@@ -82,7 +82,7 @@ No startup, o `lifespan`:
 
 Se o artefato estiver ausente, corrompido ou incompatível, a API registra o erro e tenta novamente após `MODEL_LOAD_RETRY_SECONDS`. Enquanto a carga inicial não termina, `/health` e os endpoints dependentes do modelo respondem `503`.
 
-Quando a carga termina, o modelo permanece em memória. O retry não realiza *hot reload*: depois de um novo treinamento, é necessário reiniciar o container `credit-api` para carregar o arquivo atualizado no volume.
+Quando a carga termina, o modelo e suas referências permanecem em memória. A API verifica a assinatura dos dois arquivos a cada requisição e recarrega o conjunto quando ambos pertencem ao mesmo treinamento. Se apenas um deles tiver sido atualizado, a última versão válida continua em uso até que o novo par esteja completo.
 
 O artefato precisa conter modelo, threshold, métricas e lista de features. Para compatibilidade, o serviço aceita a chave atual `features` ou a chave histórica `input_features`.
 
