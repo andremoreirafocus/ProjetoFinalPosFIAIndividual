@@ -1,4 +1,5 @@
 import unittest
+from threading import RLock
 
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import OperationalError
@@ -38,6 +39,8 @@ class ApiEndpointsTest(unittest.TestCase):
         )
         app.state.credit_policy = CreditPolicy(0.50, 0.60, "test-v1")
         app.state.model_load_error = None
+        app.state.model_bundle_lock = RLock()
+        app.state.model_bundle_auto_refresh = False
         return client
 
     # --- /health ---------------------------------------------------------
