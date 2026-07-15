@@ -484,11 +484,11 @@ O objetivo é detectar **falhas, perda de performance e mudança de comportament
 
 ### iv. Ações automatizadas a partir das previsões
 
-Os casos classificados como `manual_review` podem acionar, de forma assíncrona, um agente de IA que combina a explicação técnica produzida pela API com o catálogo semântico das features. O resultado é um relatório de apoio ao analista, sem recalcular o risco, alterar a recomendação da política ou substituir a decisão humana.
+Os casos classificados como `manual_review` podem acionar, de forma assíncrona, um agente de IA que combina a explicação técnica produzida pela API com o catálogo semântico das features. O resultado é um relatório de apoio ao analista, sem recalcular o risco, alterar a recomendação da política ou substituir a decisão humana com um claro objetivo de negócio: reduzir o tempo necessário para o analista avaliar o risco de crédito do cliente e tomar a decisão final de aprovação ou rejeição.
 
 As referências geradas no treinamento e o enriquecimento realizado pelo `ExplanationService` já foram implementados com essa finalidade: entregar ao agente informações quantitativas calculadas, comparáveis e vinculadas à mesma versão do modelo.
 
-A proposta completa — incluindo separação de responsabilidades, comunicação por RabbitMQ, governança, persistência e fluxo de revisão — está documentada em [Arquitetura proposta para o agente de revisão de crédito](AGENT_ARCHITECTURE.md).
+A proposta completa — incluindo separação de responsabilidades, comunicação assíncrona usando message broker, governança, persistência e fluxo de revisão — está documentada em [Arquitetura proposta para o agente de revisão de crédito](AGENT_ARCHITECTURE.md).
 
 ## Componentes relacionados
 

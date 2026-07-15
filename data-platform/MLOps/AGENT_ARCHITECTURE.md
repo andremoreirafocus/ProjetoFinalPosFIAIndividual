@@ -2,13 +2,13 @@
 
 ## Objetivo
 
-Esta proposta descreve um agente de IA para apoiar a revisão humana de solicitações de crédito classificadas pela política como `manual_review`.
+Esta proposta descreve um agente de IA para acelerar o processo de revisão humana de solicitações de crédito classificadas pela política como `manual_review` e, com isto, reduzir o tempo de espera do cliente e o custo da avaliação.
 
-O agente transforma a resposta técnica da API em um relatório compreensível para o analista. Ele não calcula o score, não recalcula SHAP, não modifica a recomendação da política e não toma a decisão final de crédito.
+O agente transforma as informações produzidas pela API de avaliação de risco de crédito em um relatório que ajuda o analista a identificar rapidamente os aspectos relevantes do caso. 
 
 ## Contexto disponível
 
-A API já produz os elementos quantitativos necessários para a análise:
+Para viabilizar o trabalho do agente, a API passou a produzir os elementos quantitativos necessários para a análise:
 
 - score de risco, classe prevista e versão do modelo;
 - recomendação e limites da política de crédito;
