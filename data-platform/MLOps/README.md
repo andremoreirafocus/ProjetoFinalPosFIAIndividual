@@ -18,7 +18,7 @@ A implementação é deliberadamente acadêmica: demonstra o serving do modelo e
 ## Arquitetura do serviço
 
 ```text
-Formulário de features ───────────────┐
+Formulário de features ──────────────┐
                                      ├→ PredictionService → CreditPolicy → FastAPI
                                      │                       │
                                      │            manual_review → ExplanationService
@@ -475,11 +475,11 @@ Os testes de integração `test_predict.py` e `test_configuration.py` executam o
 
 ## Próximos passos
 
-Os dois eixos detalhados a seguir completam a proposta de arquitetura dos itens iii e iv do escopo individual. Calibração do score, autenticação e adoção de um *model registry* são possíveis evoluções adicionais, apenas citadas e não detalhadas arquiteturalmente neste projeto.
+Os dois eixos detalhados a seguir completam a proposta de arquitetura dos itens iii e iv do escopo individual. O *model registry* integra a proposta de monitoramento para garantir versionamento, associação dos baselines e promoção controlada dos modelos. Calibração do score e autenticação permanecem possíveis evoluções adicionais.
 
 ### iii. Monitoramento em produção
 
-O monitoramento proposto separa a saúde operacional dos serviços da avaliação analítica por lote. O primeiro fluxo detecta indisponibilidade, erros e latência; o segundo acompanha qualidade e drift dos dados, comportamento das decisões e, quando os desfechos reais estiverem disponíveis, performance, calibração e fairness do modelo.
+O monitoramento proposto separa a saúde operacional dos serviços da avaliação analítica por lote. O primeiro fluxo detecta indisponibilidade, erros e latência; o segundo acompanha qualidade e drift dos dados, comportamento das decisões e, quando os desfechos reais estiverem disponíveis, performance, calibração e fairness do modelo. Um *model registry*, com MLflow como implementação inicial sugerida, preserva cada versão com seus artefatos e baselines, identifica o modelo aprovado para produção e permite promoção e rollback controlados. Na proposta, o PostgreSQL mantém os metadados do MLflow e um *object storage*, inicialmente sugerido com MinIO, funciona como *artifact store*.
 
 Como a base atual não contém datas absolutas adequadas para reconstruir safras, a proposta respeita essa limitação e compara lotes de novas aplicações com os baselines gerados no treinamento. A arquitetura, as responsabilidades, os fluxos de alerta e a distinção entre o que já existe e o que permanece proposto estão documentados em [Arquitetura proposta para monitoramento do modelo em produção](MONITORING_ARCHITECTURE.md).
 

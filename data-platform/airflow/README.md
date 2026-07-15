@@ -198,7 +198,7 @@ Uma execução completa deve produzir:
 - arquivo `Model/artifacts/metrics.json` atualizado;
 - arquivo `Model/artifacts/feature_reference.json` atualizado.
 
-Como evolução proposta, essa etapa deverá também gerar `monitoring_reference.json`, com o baseline específico para as comparações temporais descritas na [arquitetura de monitoramento do modelo em produção](../MLOps/MONITORING_ARCHITECTURE.md). Esse artefato ainda não faz parte da implementação atual.
+Como evolução proposta, essa etapa deverá também gerar `monitoring_reference.json` e registrar no *model registry* uma nova versão candidata com o modelo, a configuração, as métricas e os baselines associados. O fluxo está descrito na [arquitetura de monitoramento do modelo em produção](../MLOps/MONITORING_ARCHITECTURE.md) e ainda não faz parte da implementação atual.
 
 ## Reexecução e recuperação
 

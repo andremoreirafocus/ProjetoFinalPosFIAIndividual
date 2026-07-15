@@ -207,6 +207,8 @@ O comando consulta o cliente em `application_abt`, carrega `artifacts/lightgbm_a
 | [`artifacts/model_comparison.csv`](./artifacts/model_comparison.csv) | Resultado histórico de comparação de modelos. |
 | `artifacts/logistic_regression_abt.pkl` | Artefato histórico anterior à seleção do LightGBM. |
 
+Atualmente, os três artefatos da execução oficial são gravados nos mesmos caminhos e substituem os arquivos anteriores. A proposta de [monitoramento do modelo em produção](../MLOps/MONITORING_ARCHITECTURE.md) introduz um *model registry* para preservar cada versão junto com sua configuração, métricas e baselines, além de controlar promoção e rollback.
+
 ### Contrato do artefato LightGBM
 
 O Pickle oficial é um dicionário com os elementos necessários para que outro processo reproduza a inferência:

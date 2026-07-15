@@ -25,7 +25,7 @@ A plataforma cobre dois ciclos complementares:
 1. **Ciclo de desenvolvimento e treinamento:** ingestão das fontes, preparação da ABT, análise, comparação de modelos, treinamento e persistência do artefato.
 2. **Ciclo de inferência:** recuperação ou fornecimento das features, cálculo do score, aplicação da política demonstrativa e apresentação do resultado.
 
-Monitoramento contínuo e agente acelerador de revisão de crédito estão detalhados como propostas futuras e não fazem parte da implementação atual. As propostas de [monitoramento do modelo em produção](./MLOps/MONITORING_ARCHITECTURE.md) e do [agente acelerador de revisão de crédito](./MLOps/AGENT_ARCHITECTURE.md) distinguem os pré-requisitos já disponíveis dos componentes ainda não implementados. Atualmente, os artefatos ficam em um único diretório persistente, compartilhado entre os containers por volumes do tipo *bind mount*, e são sobrescritos a cada treinamento; não há histórico físico de versões nem *model registry*. Autenticação, implantação produtiva e a eventual adoção de um *model registry* são apenas citadas como possíveis evoluções, sem definição arquitetural neste projeto.
+Monitoramento contínuo e agente acelerador de revisão de crédito estão detalhados como propostas futuras e não fazem parte da implementação atual. As propostas de [monitoramento do modelo em produção](./MLOps/MONITORING_ARCHITECTURE.md) e do [agente acelerador de revisão de crédito](./MLOps/AGENT_ARCHITECTURE.md) distinguem os pré-requisitos já disponíveis dos componentes ainda não implementados. Atualmente, os artefatos ficam em um único diretório persistente, compartilhado entre os containers por volumes do tipo *bind mount*, e são sobrescritos a cada treinamento. A proposta de monitoramento introduz um *model registry*, com MLflow como implementação inicial sugerida, para preservar versões, associar seus baselines e controlar promoção e rollback. Autenticação e implantação produtiva são apenas citadas como possíveis evoluções adicionais, sem definição arquitetural neste projeto.
 
 ## Arquitetura
 
@@ -402,7 +402,7 @@ docker compose down
 
 - calibrar o score quando houver necessidade de interpretação probabilística;
 - validar thresholds com custos reais do negócio;
-- implementar a proposta de [monitoramento contínuo de dados, modelo e serviço](./MLOps/MONITORING_ARCHITECTURE.md);
+- implementar a proposta de [monitoramento contínuo de dados, modelo e serviço](./MLOps/MONITORING_ARCHITECTURE.md), incluindo o *model registry* e o versionamento dos artefatos;
 - implementar a proposta do [agente acelerador de revisão de crédito](./MLOps/AGENT_ARCHITECTURE.md);
 - formalizar versionamento, rastreabilidade e auditoria das decisões;
 - automatizar testes, build e implantação.

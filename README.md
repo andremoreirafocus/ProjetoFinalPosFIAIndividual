@@ -54,7 +54,7 @@ A implementação completa e o desenho arquitetural estão documentados em [data
 
 Os dois entregáveis propostos para evolução da solução estão documentados separadamente:
 
-- [monitoramento do modelo em produção](./data-platform/MLOps/MONITORING_ARCHITECTURE.md), abrangendo falhas operacionais, drift, maturação dos desfechos, performance, calibração e fairness;
+- [monitoramento do modelo em produção](./data-platform/MLOps/MONITORING_ARCHITECTURE.md), abrangendo falhas operacionais, versionamento por *model registry*, drift, maturação dos desfechos, performance, calibração e fairness;
 - [agente acelerador de revisão de crédito](./data-platform/MLOps/AGENT_ARCHITECTURE.md), que produz de forma assíncrona um relatório de apoio ao analista sem substituir a decisão humana.
 
 Esses componentes permanecem propostas arquiteturais. Os documentos distinguem explicitamente seus pré-requisitos já implementados das funcionalidades futuras.
