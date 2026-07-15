@@ -41,7 +41,7 @@ airflow/
 - [`pipeline_orchestration.py`](./dags/pipeline_orchestration.py): DAG principal da plataforma;
 - [`Dockerfile`](./Dockerfile): estende a imagem Apache Airflow 2.9.3;
 - [`requirements.txt`](./requirements.txt): dependências compartilhadas pelas tarefas;
-- `data/csv/`: entrada local dos arquivos do Home Credit.
+- `data/csv/`: entrada local dos arquivos do Home Credit e destino das exportações CSV manuais usadas na entrega acadêmica.
 
 ## DAG `pipeline_orchestration`
 
@@ -108,6 +108,8 @@ Coloque em `data-platform/airflow/data/csv`:
 - `installments_payments.csv`.
 
 O nome lógico de cada tabela e seu `chunk_size` são definidos em [`config_pipeline.json`](../DataPipeline/config_pipeline.json). A tarefa de ingestão valida se a fonte pertence ao escopo antes de carregá-la.
+
+O mesmo diretório também pode conter as bases tratadas e a ABT geradas manualmente por [`export_data.py`](../DataPipeline/export_data.py), além do catálogo original de colunas. Esses arquivos adicionais apoiam a entrega e a análise, mas não são entradas da DAG nem saídas automáticas do Airflow.
 
 ## Volumes e caminhos no container
 

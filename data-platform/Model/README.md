@@ -94,7 +94,6 @@ O holdout mede generalização e não participa do ajuste final durante a compar
 | Seção | Conteúdo |
 |---|---|
 | `metadata` | Projeto, versão, algoritmo, origem, tabela e caminho do artefato. |
-| `database` | Hosts e parâmetros de conexão dos ambientes local e Docker. |
 | `variables` | Identificador, target, features de entrada e categóricas. |
 | `parameters.split` | Holdout, estratificação e semente. |
 | `parameters.classifier` | Algoritmo e hiperparâmetros do LightGBM. |
@@ -205,7 +204,6 @@ O comando consulta o cliente em `application_abt`, carrega `artifacts/lightgbm_a
 | [`artifacts/metrics.json`](./artifacts/metrics.json) | Métricas e hiperparâmetros da execução persistida. |
 | `artifacts/feature_reference.json` | Distribuições das features e do score, referências por target e importância TreeSHAP global. |
 | [`artifacts/model_comparison.csv`](./artifacts/model_comparison.csv) | Resultado histórico de comparação de modelos. |
-| `artifacts/logistic_regression_abt.pkl` | Artefato histórico anterior à seleção do LightGBM. |
 
 Atualmente, os três artefatos da execução oficial são gravados nos mesmos caminhos e substituem os arquivos anteriores. A proposta de [monitoramento do modelo em produção](../MLOps/MONITORING_ARCHITECTURE.md) introduz um *model registry* para preservar cada versão junto com sua configuração, métricas e baselines, além de controlar promoção e rollback.
 
