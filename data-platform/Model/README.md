@@ -226,7 +226,7 @@ O Pickle oficial é um dicionário com os elementos necessários para que outro 
 
 A API aceita `features` e normaliza internamente esse nome para `input_features`, preservando compatibilidade com artefatos anteriores.
 
-### Referências para explicação e para o agente
+### Referências para explicação e para o agente acelerador de revisão de crédito
 
 Após ajustar o modelo final, `train.py` gera `feature_reference.json` com a mesma
 versão e instante de treinamento do artefato. Para features numéricas, o arquivo
@@ -244,11 +244,10 @@ SHAP permanecem na escala bruta do modelo e não representam variação percentu
 de probabilidade.
 
 Essas referências foram acrescentadas ao treinamento para preparar informações
-determinísticas e versionadas que possam ser consumidas pelo futuro agente de
-revisão. O agente não acessará os dados de treino nem calculará estatísticas:
+determinísticas e versionadas que possam ser consumidas pelo futuro agente acelerador de revisão de crédito. O agente acelerador de revisão de crédito não acessará os dados de treino nem calculará estatísticas:
 receberá da API a explicação local já enriquecida com este baseline e apenas a
 converterá em um relatório para o analista. A arquitetura desse fluxo está em
-[Arquitetura proposta para o agente de revisão de crédito](../MLOps/AGENT_ARCHITECTURE.md).
+[Arquitetura proposta para o agente acelerador de revisão de crédito](../MLOps/AGENT_ARCHITECTURE.md).
 
 ## Como estabelecemos confiança no modelo
 

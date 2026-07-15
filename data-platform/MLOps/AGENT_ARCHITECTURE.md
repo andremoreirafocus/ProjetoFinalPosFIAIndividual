@@ -1,14 +1,14 @@
-# Arquitetura proposta para o agente de revisão de crédito
+# Arquitetura proposta para o agente acelerador de revisão de crédito
 
 ## Objetivo
 
-Esta proposta descreve um agente de IA para acelerar o processo de revisão humana de solicitações de crédito classificadas pela política como `manual_review` e, com isto, reduzir o tempo de espera do cliente e o custo da avaliação.
+Esta proposta descreve o agente acelerador de revisão de crédito, que utiliza IA para acelerar o processo de revisão humana de solicitações classificadas pela política como `manual_review` e, com isto, reduzir o tempo de espera do cliente e o custo da avaliação.
 
-O agente transforma as informações produzidas pela API de avaliação de risco de crédito em um relatório que ajuda o analista a identificar rapidamente os aspectos relevantes do caso. 
+O agente acelerador de revisão de crédito transforma as informações produzidas pela API de avaliação de risco de crédito em um relatório que ajuda o analista a identificar rapidamente os aspectos relevantes do caso.
 
 ## Contexto disponível
 
-Para viabilizar o trabalho do agente, a API passou a produzir os elementos quantitativos necessários para a análise:
+Para viabilizar o trabalho do agente acelerador de revisão de crédito, a API passou a produzir os elementos quantitativos necessários para a análise:
 
 - score de risco, classe prevista e versão do modelo;
 - recomendação e limites da política de crédito;
@@ -18,11 +18,11 @@ Para viabilizar o trabalho do agente, a API passou a produzir os elementos quant
 
 O arquivo [`config/feature_catalog.json`](config/feature_catalog.json) complementa esses dados com a semântica de negócio das features, suas unidades, fórmulas, regras de interpretação e restrições de governança.
 
-Portanto, o agente não realiza uma nova análise estatística. Sua função é combinar duas fontes já preparadas: a resposta explicativa da API e o catálogo de features.
+Portanto, o agente acelerador de revisão de crédito não realiza uma nova análise estatística. Sua função é combinar duas fontes já preparadas: a resposta explicativa da API e o catálogo de features.
 
-## Preparação das informações para o agente
+## Preparação das informações para o agente acelerador de revisão de crédito
 
-A disponibilização de informações para o agente começa no treinamento e continua
+A disponibilização de informações para o agente acelerador de revisão de crédito começa no treinamento e continua
 na API. As funcionalidades já implementadas formam uma cadeia única:
 
 ```text
@@ -41,7 +41,7 @@ ExplanationService
 Resposta técnica da API
           │ futura mensagem de manual_review
           ▼
-Agente + feature_catalog.json
+Agente acelerador de revisão de crédito + feature_catalog.json
           │ interpretação semântica e governança
           ▼
 Relatório para o analista
@@ -54,8 +54,7 @@ arquivo registra distribuições das features e do score, referências por class
 a distribuição global da magnitude SHAP. Versão e instante de treinamento ligam
 as referências ao modelo que as produziu.
 
-Esse processamento foi incorporado ao treinamento para que o agente não precise
-acessar a ABT, inferir baselines ou calcular estatísticas sobre a população.
+Esse processamento foi incorporado ao treinamento para que o agente acelerador de revisão de crédito não precise acessar a ABT, inferir baselines ou calcular estatísticas sobre a população.
 
 ### Informações preparadas na API
 
@@ -65,23 +64,23 @@ treinamento. A resposta passa a informar tanto o efeito local no score quanto o
 contexto populacional necessário para interpretá-lo.
 
 Essa resposta enriquecida foi implementada como a entrada quantitativa do futuro
-agente. Quando a mensageria for adicionada, ela será publicada sem que o agente
+agente acelerador de revisão de crédito. Quando a mensageria for adicionada, ela será publicada sem que o agente acelerador de revisão de crédito
 tenha de chamar novamente o modelo ou reconstruir a explicação.
 
 ### Informação acrescentada pelo catálogo
 
 O `feature_catalog.json` não participa do treinamento nem da predição. Ele será
-consultado pelo agente para acrescentar nomes legíveis, descrições, unidades,
+consultado pelo agente acelerador de revisão de crédito para acrescentar nomes legíveis, descrições, unidades,
 semântica dos valores e regras de governança às evidências recebidas da API.
 
 Assim, cada camada acrescenta somente a informação de sua responsabilidade:
 
-| Camada | Informação disponibilizada ao agente |
+| Camada | Informação disponibilizada ao agente acelerador de revisão de crédito |
 |---|---|
 | `train.py` | Baseline populacional e referência SHAP global versionados. |
 | API | Score, política, SHAP local e comparação do cliente com o baseline. |
 | Catálogo | Significado de negócio e autorização de uso de cada feature. |
-| Agente | Organização narrativa das evidências permitidas. |
+| Agente acelerador de revisão de crédito | Organização narrativa das evidências permitidas. |
 
 ## Visão arquitetural
 
@@ -99,7 +98,7 @@ API de predição
         RabbitMQ
             │ entrega assíncrona
             ▼
-      Agente de análise ◄──── feature_catalog.json
+      Agente acelerador de revisão de crédito ◄──── feature_catalog.json
             │
             ├── consulta o modelo de linguagem
             │
@@ -110,7 +109,7 @@ API de predição
       Analista humano
 ```
 
-A comunicação entre a API e o agente é assíncrona e ocorre por uma fila mantida por um *message broker*. Para esta proposta, o broker é o RabbitMQ: ele atende ao fluxo de um produtor e um consumidor principal sem exigir uma plataforma de *event streaming*.
+A comunicação entre a API e o agente acelerador de revisão de crédito é assíncrona e ocorre por uma fila mantida por um *message broker*. Para esta proposta, o broker é o RabbitMQ: ele atende ao fluxo de um produtor e um consumidor principal sem exigir uma plataforma de *event streaming*.
 
 ## Componentes
 
@@ -128,13 +127,13 @@ A publicação não altera o contrato matemático da predição. A API também n
 
 ### RabbitMQ
 
-O RabbitMQ desacopla o tempo de resposta da predição do tempo necessário para gerar o relatório. Sua responsabilidade é receber a mensagem publicada pela API, mantê-la disponível e entregá-la ao agente consumidor.
+O RabbitMQ desacopla o tempo de resposta da predição do tempo necessário para gerar o relatório. Sua responsabilidade é receber a mensagem publicada pela API, mantê-la disponível e entregá-la ao agente acelerador de revisão de crédito.
 
-Se o agente estiver temporariamente indisponível, a API continua realizando predições e a solicitação permanece pendente para processamento posterior.
+Se o agente acelerador de revisão de crédito estiver temporariamente indisponível, a API continua realizando predições e a solicitação permanece pendente para processamento posterior.
 
-### Agente de análise
+### Agente acelerador de revisão de crédito
 
-O agente é um processo independente da API e consumidor da fila. Ele:
+O agente acelerador de revisão de crédito é um processo independente da API e consumidor da fila. Ele:
 
 - recebe o resultado técnico completo do caso em revisão;
 - cruza os nomes das features com o catálogo;
@@ -143,11 +142,11 @@ O agente é um processo independente da API e consumidor da fila. Ele:
 - solicita ao modelo de linguagem a composição do relatório;
 - valida e persiste o resultado produzido.
 
-O agente interpreta evidências determinísticas, mas não substitui o modelo, a política nem o analista.
+O agente acelerador de revisão de crédito interpreta evidências determinísticas, mas não substitui o modelo, a política nem o analista.
 
 ### Catálogo de features
 
-O catálogo pertence ao contexto do agente, não ao serviço de predição. Ele traduz os campos técnicos para conceitos de negócio e informa quais features podem ser usadas no relatório.
+O catálogo pertence ao contexto do agente acelerador de revisão de crédito, não ao serviço de predição. Ele traduz os campos técnicos para conceitos de negócio e informa quais features podem ser usadas no relatório.
 
 Features com `allowed_in_report: false` não são enviadas ao modelo de linguagem como justificativas da avaliação. Elas podem continuar disponíveis em fluxos separados de auditoria de *fairness*.
 
@@ -161,11 +160,11 @@ O provedor do modelo é uma dependência externa ao domínio de predição. Sua 
 
 Os relatórios precisam ser persistidos para consulta, rastreabilidade e eventual reprocessamento. A proposta reutiliza o PostgreSQL já presente na plataforma, evitando introduzir outro mecanismo de armazenamento.
 
-O repositório mantém a associação entre o caso analisado, o resultado técnico que originou o relatório e o conteúdo produzido pelo agente.
+O repositório mantém a associação entre o caso analisado, o resultado técnico que originou o relatório e o conteúdo produzido pelo agente acelerador de revisão de crédito.
 
 ### Interface do analista
 
-O analista humano consulta o relatório persistido por uma interface de revisão. Essa interface pode evoluir a partir do frontend existente, mas permanece um consumidor do relatório: não executa o agente nem acessa diretamente o modelo de linguagem.
+O analista humano consulta o relatório persistido por uma interface de revisão. Essa interface pode evoluir a partir do frontend existente, mas permanece um consumidor do relatório: não executa o agente acelerador de revisão de crédito nem acessa diretamente o modelo de linguagem.
 
 ## Fluxo da revisão humana
 
@@ -173,10 +172,10 @@ O analista humano consulta o relatório persistido por uma interface de revisão
 2. Quando a recomendação é `manual_review`, o `ExplanationService` acrescenta as evidências locais e as referências populacionais.
 3. A API publica no RabbitMQ uma solicitação de relatório contendo esse resultado técnico.
 4. A resposta da predição é devolvida sem aguardar a geração narrativa.
-5. O agente consome a solicitação e consulta o catálogo de features.
-6. O agente remove do contexto narrativo as features não autorizadas.
+5. O agente acelerador de revisão de crédito consome a solicitação e consulta o catálogo de features.
+6. O agente acelerador de revisão de crédito remove do contexto narrativo as features não autorizadas.
 7. O modelo de linguagem transforma as evidências permitidas em um relatório estruturado.
-8. O agente valida e persiste o relatório no PostgreSQL.
+8. O agente acelerador de revisão de crédito valida e persiste o relatório no PostgreSQL.
 9. O relatório fica disponível para o analista responsável pela decisão final.
 
 ## Separação de responsabilidades
@@ -186,17 +185,17 @@ O analista humano consulta o relatório persistido por uma interface de revisão
 | `PredictionService` | Preparar features e calcular score e classe. | Não aplica política nem produz explicação narrativa. |
 | `CreditPolicy` | Converter o score em recomendação de negócio. | Não conhece SHAP, catálogo ou modelo de linguagem. |
 | `ExplanationService` | Calcular SHAP local e comparações com o treinamento. | Não interpreta semanticamente nem redige relatório. |
-| API | Expor o contrato e publicar a solicitação de relatório. | Não aguarda nem executa o agente. |
+| API | Expor o contrato e publicar a solicitação de relatório. | Não aguarda nem executa o agente acelerador de revisão de crédito. |
 | RabbitMQ | Transportar a solicitação de forma assíncrona. | Não interpreta nem persiste o relatório final. |
-| Agente | Combinar evidências e catálogo e gerar o relatório. | Não recalcula risco nem altera a recomendação. |
+| Agente acelerador de revisão de crédito | Combinar evidências e catálogo e gerar o relatório. | Não recalcula risco nem altera a recomendação. |
 | PostgreSQL | Persistir o relatório e sua rastreabilidade. | Não participa da geração textual. |
 | Analista humano | Avaliar o caso e tomar a decisão final. | Não precisa interpretar diretamente valores SHAP brutos. |
 
 ## Fronteiras de dados e governança
 
-A mensagem enviada ao agente contém somente os dados necessários para produzir o relatório. O resultado quantitativo da API permanece imutável durante todo o fluxo.
+A mensagem enviada ao agente acelerador de revisão de crédito contém somente os dados necessários para produzir o relatório. O resultado quantitativo da API permanece imutável durante todo o fluxo.
 
-Antes da chamada ao modelo de linguagem, o agente usa o catálogo para separar evidências autorizadas de atributos reservados à auditoria. Isso evita depender apenas de uma instrução textual para impedir o uso de features sensíveis.
+Antes da chamada ao modelo de linguagem, o agente acelerador de revisão de crédito usa o catálogo para separar evidências autorizadas de atributos reservados à auditoria. Isso evita depender apenas de uma instrução textual para impedir o uso de features sensíveis.
 
 O relatório deve deixar explícito que:
 
@@ -209,8 +208,8 @@ O relatório deve deixar explícito que:
 
 O desacoplamento por mensageria mantém a predição independente da geração do relatório:
 
-- indisponibilidade do agente ou do modelo de linguagem não interrompe a API;
-- uma solicitação não confirmada pelo agente pode voltar à fila;
+- indisponibilidade do agente acelerador de revisão de crédito ou do modelo de linguagem não interrompe a API;
+- uma solicitação não confirmada pelo agente acelerador de revisão de crédito pode voltar à fila;
 - falhas definitivas ficam identificadas para inspeção e reprocessamento;
 - o relatório só é considerado concluído depois de validado e persistido.
 
@@ -218,7 +217,7 @@ Essas garantias pertencem ao fluxo de relatório. Elas não modificam o comporta
 
 ## Estado da proposta
 
-Já estão implementados os pré-requisitos determinísticos do agente:
+Já estão implementados os pré-requisitos determinísticos do agente acelerador de revisão de crédito:
 
 - predição e política de crédito;
 - explicação TreeSHAP local;
@@ -229,5 +228,5 @@ Permanecem como proposta arquitetural, ainda não implementada:
 
 - inclusão do RabbitMQ na plataforma;
 - publicação das solicitações pela API;
-- processo consumidor do agente e integração com o modelo de linguagem;
+- processo consumidor do agente acelerador de revisão de crédito e integração com o modelo de linguagem;
 - persistência e consulta dos relatórios de revisão.
