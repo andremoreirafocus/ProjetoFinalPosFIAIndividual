@@ -165,4 +165,4 @@ cd data-platform
 docker compose up -d --build postgres credit-api credit-frontend
 ```
 
-Consulte contratos, endpoints, configuração e testes em [MLOps/README.md](./data-platform/MLOps/README.md).
+Consulte a visão geral e o índice da documentação em [MLOps/README.md](./data-platform/MLOps/README.md). Contratos e endpoints estão em [MLOps/API.md](./data-platform/MLOps/API.md), e os testes estão em [MLOps/DEVELOPMENT.md](./data-platform/MLOps/DEVELOPMENT.md).

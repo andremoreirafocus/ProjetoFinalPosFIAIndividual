@@ -49,7 +49,7 @@ airflow/data/csv
                     ┌───────▼───┐ ┌───▼────────────────┐
                     │ Jupyter   │ │ Modelo LightGBM    │
                     │ EDA       │ │ artefato + métricas│
-                    │           │ │ + referências     │
+                    │           │ │ + referências      │
                     └───────────┘ └─────────┬──────────┘
                                            │
                               ┌────────────▼────────────┐
@@ -170,7 +170,7 @@ data-platform/
 ├── airflow/             # ambiente e DAG de orquestração
 ├── DataPipeline/        # ingestão, transformações, ABT e EDA
 ├── jupyter/             # imagem do ambiente de notebooks
-├── MLOps/               # FastAPI, Streamlit e testes
+├── MLOps/               # aplicações, testes e propostas arquiteturais
 ├── Model/               # treinamento, avaliação e artefatos
 ├── postgres/            # inicialização do banco data
 ├── Dados/               # pasta reservada aos CSVs da entrega acadêmica
@@ -355,8 +355,8 @@ Para acompanhar as tentativas:
 docker compose logs -f credit-api
 ```
 
-O contrato completo e exemplos das respostas estão descritos no
-[`README` do MLOps](MLOps/README.md#carregamento-do-modelo-e-health-check).
+O contrato completo e exemplos das respostas estão descritos na
+[documentação da API](MLOps/API.md#carregamento-do-modelo).
 
 ## Execução do pipeline
 
