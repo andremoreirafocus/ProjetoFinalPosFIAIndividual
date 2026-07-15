@@ -8,7 +8,7 @@ O agente acelerador de revisão de crédito transforma as informações produzid
 
 ## Contexto disponível
 
-Para viabilizar o trabalho do agente acelerador de revisão de crédito, a API passou a produzir os elementos quantitativos necessários para a análise:
+Para viabilizar o trabalho do agente acelerador de revisão de crédito, a API de risco de crédito passou a produzir os elementos quantitativos necessários para a análise:
 
 - score de risco, classe prevista e versão do modelo;
 - recomendação e limites da política de crédito;
@@ -101,15 +101,23 @@ API de predição
       Agente acelerador de revisão de crédito ◄──── feature_catalog.json
             │
             ├── consulta o modelo de linguagem
+            ├── persiste relatório estruturado ───→ PostgreSQL ou object storage
             │
-            ▼
-   Repositório de relatórios
-            │
-            ▼
-      Analista humano
+            └── publica referência do relatório
+                         ▼
+                     RabbitMQ
+                         │ entrega assíncrona
+                         ▼
+              Renderizador determinístico
+                         │ aplica template uniforme
+                         ▼
+                  Relatório em PDF
+                         │
+                         ▼
+              Repositório de relatórios ───→ Analista humano
 ```
 
-A comunicação entre a API e o agente acelerador de revisão de crédito é assíncrona e ocorre por uma fila mantida por um *message broker*. Para esta proposta, o broker é o RabbitMQ: ele atende ao fluxo de um produtor e um consumidor principal sem exigir uma plataforma de *event streaming*.
+A comunicação entre os componentes é assíncrona e ocorre por filas mantidas por um *message broker*. Para esta proposta, o broker é o RabbitMQ: a API publica a solicitação de revisão para o agente acelerador de revisão de crédito, que posteriormente publica a disponibilidade do relatório estruturado para o renderizador.
 
 ## Componentes
 
@@ -127,7 +135,7 @@ A publicação não altera o contrato matemático da predição. A API também n
 
 ### RabbitMQ
 
-O RabbitMQ desacopla o tempo de resposta da predição do tempo necessário para gerar o relatório. Sua responsabilidade é receber a mensagem publicada pela API, mantê-la disponível e entregá-la ao agente acelerador de revisão de crédito.
+O RabbitMQ desacopla o tempo de resposta da predição do tempo necessário para gerar o relatório e separa a geração do conteúdo de sua renderização. Sua responsabilidade é transportar as mensagens publicadas pela API e pelo agente acelerador de revisão de crédito até os respectivos consumidores.
 
 Se o agente acelerador de revisão de crédito estiver temporariamente indisponível, a API continua realizando predições e a solicitação permanece pendente para processamento posterior.
 
@@ -140,7 +148,8 @@ O agente acelerador de revisão de crédito é um processo independente da API e
 - aplica as restrições de governança antes da geração textual;
 - seleciona e contextualiza as evidências mais relevantes;
 - solicita ao modelo de linguagem a composição do relatório;
-- valida e persiste o resultado produzido.
+- valida e persiste o conteúdo estruturado produzido;
+- publica no RabbitMQ uma mensagem informando que o relatório está disponível para renderização.
 
 O agente acelerador de revisão de crédito interpreta evidências determinísticas, mas não substitui o modelo, a política nem o analista.
 
@@ -156,11 +165,25 @@ O modelo de linguagem recebe somente as evidências autorizadas e já calculadas
 
 O provedor do modelo é uma dependência externa ao domínio de predição. Sua indisponibilidade afeta a geração do relatório, mas não impede a API de calcular e devolver o score.
 
+### System prompt
+
+O comportamento do modelo de linguagem será orientado por um *system prompt* versionado. Esse artefato limita o relatório às evidências recebidas, impede o recálculo ou a alteração da recomendação, proíbe interpretações causais das contribuições SHAP, exige uma saída estruturada compatível com o renderizador e reforça que a decisão final permanece humana.
+
+A versão do *system prompt* utilizada deve acompanhar os metadados do relatório para garantir rastreabilidade. O texto completo será definido e mantido junto à implementação do agente acelerador de revisão de crédito, não neste documento arquitetural.
+
+### Renderizador de relatórios
+
+O renderizador é um componente independente e consumidor da fila de relatórios disponíveis. Ao receber a mensagem, utiliza a referência informada para recuperar o conteúdo estruturado no PostgreSQL ou no *object storage*, conforme a decisão de armazenamento adotada, e aplica um template fixo para gerar um PDF legível pelo analista. Essa etapa é determinística e não utiliza outro modelo de linguagem, garantindo uniformidade de layout, seções e identidade visual.
+
+A separação entre conteúdo e apresentação também permite regenerar o PDF sem executar novamente o agente acelerador de revisão de crédito.
+
 ### Repositório de relatórios
 
-Os relatórios precisam ser persistidos para consulta, rastreabilidade e eventual reprocessamento. A proposta reutiliza o PostgreSQL já presente na plataforma, evitando introduzir outro mecanismo de armazenamento.
+Os relatórios precisam ser persistidos para consulta, rastreabilidade e eventual reprocessamento. O PostgreSQL é tecnicamente adequado para armazenar os metadados e o conteúdo estruturado porque combina suporte transacional e relacional com JSONB. O volume e o padrão de acesso previstos não exigem um datastore especializado; sua reutilização atende aos requisitos sem criar dívida técnica ou complexidade operacional desnecessária.
 
 O repositório mantém a associação entre o caso analisado, o resultado técnico que originou o relatório e o conteúdo produzido pelo agente acelerador de revisão de crédito.
+
+Dependendo do tamanho dos relatórios estruturados, dos PDFs gerados e do volume acumulado, poderá ser necessário armazenar um ou ambos os conteúdos em um *object storage*. Nesse cenário, o PostgreSQL manterá os metadados e as referências estáveis aos objetos, compostas por `bucket` e `object key`. Para esta proposta, o MinIO é a escolha inicial sugerida para implementar esse armazenamento. O renderizador permanece independente dessa escolha porque recebe na mensagem a referência do relatório estruturado que deverá recuperar.
 
 ### Interface do analista
 
@@ -175,8 +198,11 @@ O analista humano consulta o relatório persistido por uma interface de revisão
 5. O agente acelerador de revisão de crédito consome a solicitação e consulta o catálogo de features.
 6. O agente acelerador de revisão de crédito remove do contexto narrativo as features não autorizadas.
 7. O modelo de linguagem transforma as evidências permitidas em um relatório estruturado.
-8. O agente acelerador de revisão de crédito valida e persiste o relatório no PostgreSQL.
-9. O relatório fica disponível para o analista responsável pela decisão final.
+8. O agente acelerador de revisão de crédito valida e persiste o conteúdo produzido no repositório definido para o relatório estruturado.
+9. O agente acelerador de revisão de crédito publica no RabbitMQ uma mensagem com a referência do relatório disponível.
+10. O renderizador consome a mensagem e recupera o conteúdo estruturado no PostgreSQL ou no *object storage*, conforme a referência recebida.
+11. O renderizador aplica um template fixo e gera o PDF.
+12. O PDF ou sua referência é persistido e fica disponível para o analista responsável pela decisão final.
 
 ## Separação de responsabilidades
 
@@ -186,9 +212,12 @@ O analista humano consulta o relatório persistido por uma interface de revisão
 | `CreditPolicy` | Converter o score em recomendação de negócio. | Não conhece SHAP, catálogo ou modelo de linguagem. |
 | `ExplanationService` | Calcular SHAP local e comparações com o treinamento. | Não interpreta semanticamente nem redige relatório. |
 | API | Expor o contrato e publicar a solicitação de relatório. | Não aguarda nem executa o agente acelerador de revisão de crédito. |
-| RabbitMQ | Transportar a solicitação de forma assíncrona. | Não interpreta nem persiste o relatório final. |
-| Agente acelerador de revisão de crédito | Combinar evidências e catálogo e gerar o relatório. | Não recalcula risco nem altera a recomendação. |
-| PostgreSQL | Persistir o relatório e sua rastreabilidade. | Não participa da geração textual. |
+| RabbitMQ | Transportar solicitações de revisão e avisos de relatório disponível. | Não interpreta nem persiste o relatório final. |
+| Agente acelerador de revisão de crédito | Produzir e persistir o conteúdo estruturado e publicar sua referência. | Não recalcula risco, altera a recomendação ou define o layout. |
+| System prompt | Definir os limites de comportamento e o contrato de saída do modelo de linguagem. | Não contém cálculos, evidências específicas do cliente ou regras de decisão de crédito. |
+| Renderizador | Consumir a referência, recuperar o conteúdo no repositório indicado e gerar o PDF de forma determinística. | Não interpreta evidências nem cria conteúdo. |
+| PostgreSQL | Persistir metadados, referências, rastreabilidade e, quando adequado, o conteúdo estruturado em JSONB. | Não participa da geração textual ou visual. |
+| Object storage — inicialmente MinIO | Armazenar o relatório estruturado, o PDF ou ambos quando seu tamanho ou volume justificar o armazenamento de objetos. | Não substitui os metadados e relacionamentos mantidos no PostgreSQL. |
 | Analista humano | Avaliar o caso e tomar a decisão final. | Não precisa interpretar diretamente valores SHAP brutos. |
 
 ## Fronteiras de dados e governança
@@ -229,4 +258,6 @@ Permanecem como proposta arquitetural, ainda não implementada:
 - inclusão do RabbitMQ na plataforma;
 - publicação das solicitações pela API;
 - processo consumidor do agente acelerador de revisão de crédito e integração com o modelo de linguagem;
-- persistência e consulta dos relatórios de revisão.
+- definição e versionamento do *system prompt*;
+- renderização determinística dos relatórios em PDF;
+- persistência e consulta dos relatórios de revisão, com possível adoção de *object storage*, inicialmente MinIO, para o conteúdo estruturado, o PDF ou ambos, conforme o tamanho e o volume acumulado.
