@@ -10,7 +10,7 @@ O agente acelerador de revisão de crédito transforma as informações produzid
 
 Para viabilizar o trabalho do agente acelerador de revisão de crédito, a API de risco de crédito passou a produzir os elementos quantitativos necessários para a análise:
 
-- score de risco, classe prevista e versão do modelo;
+- score de risco e classe prevista;
 - recomendação e limites da política de crédito;
 - contribuições TreeSHAP locais para os casos em revisão manual;
 - posição das features do cliente na população de treinamento;
@@ -66,6 +66,8 @@ contexto populacional necessário para interpretá-lo.
 Essa resposta enriquecida foi implementada como a entrada quantitativa do futuro
 agente acelerador de revisão de crédito. Quando a mensageria for adicionada, ela será publicada sem que o agente acelerador de revisão de crédito
 tenha de chamar novamente o modelo ou reconstruir a explicação.
+
+A mensagem deverá acrescentar a versão do modelo disponível no artefato para manter a rastreabilidade. Essa informação ainda não integra o contrato atual de resposta da API.
 
 ### Informação acrescentada pelo catálogo
 

@@ -121,13 +121,18 @@ MLOps/
 │   │   ├── schemas.py
 │   │   ├── feature_service.py
 │   │   ├── model_service.py
+│   │   ├── explanation_service.py
 │   │   ├── credit_policy.py
 │   │   └── requirements.txt
 │   └── frontend/
 │       ├── app.py
 │       ├── field_config.py
 │       └── requirements.txt
+├── config/
+│   └── feature_catalog.json
 ├── tests/
+├── AGENT_ARCHITECTURE.md
+├── MONITORING_ARCHITECTURE.md
 ├── Dockerfile.api
 ├── Dockerfile.frontend
 ├── test-requirements.txt
@@ -474,24 +479,21 @@ Além de calibração do score, autenticação e adoção de um *model registry*
 
 ### iii. Monitoramento em produção
 
-O objetivo é detectar **falhas, perda de performance e mudança de comportamento dos dados** antes que afetem a decisão de crédito. Como a base é **transversal (sem datas absolutas de originação)**, o monitoramento é definido por **lote de novas aplicações comparado ao baseline de treino** — e não por safra temporal, que exigiria coortes datadas inexistentes neste conjunto. Cada dimensão tem um **alerta** que aciona reavaliação ou re-treino:
+O monitoramento proposto separa a saúde operacional dos serviços da avaliação analítica por lote. O primeiro fluxo detecta indisponibilidade, erros e latência; o segundo acompanha qualidade e drift dos dados, comportamento das decisões e, quando os desfechos reais estiverem disponíveis, performance, calibração e fairness do modelo.
 
-- **estabilidade dos dados** — PSI do score e das principais features de cada novo lote contra a população de treino (não depende de rótulos nem de datas);
-- **desempenho** — AUC/KS recalculados à medida que os desfechos (inadimplência) dos aprovados amadurecem, contra o baseline do teste;
-- **decisão** — taxa de aprovação e inadimplência observada dos aprovados por lote;
-- **calibração** — Brier / curva de calibração conforme os desfechos são observados;
-- **fairness** — desempenho e taxa de negados por subgrupo.
+Como a base atual não contém datas absolutas adequadas para reconstruir safras, a proposta respeita essa limitação e compara lotes de novas aplicações com os baselines gerados no treinamento. A arquitetura, as responsabilidades, os fluxos de alerta e a distinção entre o que já existe e o que permanece proposto estão documentados em [Arquitetura proposta para monitoramento do modelo em produção](MONITORING_ARCHITECTURE.md).
 
 ### iv. Ações automatizadas a partir das previsões
 
 Os casos classificados como `manual_review` podem acionar, de forma assíncrona, o agente acelerador de revisão de crédito, que combina a explicação técnica produzida pela API com o catálogo semântico das features. O resultado é um relatório de apoio ao analista, sem recalcular o risco, alterar a recomendação da política ou substituir a decisão humana com um claro objetivo de negócio: reduzir o tempo necessário para o analista avaliar o risco de crédito do cliente e tomar a decisão final de aprovação ou rejeição.
 
-As referências geradas no treinamento e o enriquecimento realizado pelo `ExplanationService` já foram implementados com essa finalidade: entregar ao agente acelerador de revisão de crédito informações quantitativas calculadas, comparáveis e vinculadas à mesma versão do modelo.
+As referências geradas no treinamento e o enriquecimento realizado pelo `ExplanationService` já foram implementados com essa finalidade: produzir informações quantitativas calculadas e comparáveis. A futura mensagem ao agente acelerador de revisão de crédito também deverá identificar a versão do modelo correspondente, informação disponível no artefato, mas ainda ausente do contrato atual de resposta da API.
 
 A proposta completa — incluindo separação de responsabilidades, comunicação assíncrona usando message broker, governança, persistência e fluxo de revisão — está documentada em [Arquitetura proposta para o agente acelerador de revisão de crédito](AGENT_ARCHITECTURE.md).
 
 ## Componentes relacionados
 
+- [Arquitetura proposta para monitoramento do modelo em produção](MONITORING_ARCHITECTURE.md)
 - [Arquitetura proposta para o agente acelerador de revisão de crédito](AGENT_ARCHITECTURE.md)
 - [Modelo](../Model/README.md)
 - [PostgreSQL](../postgres/README.md)
