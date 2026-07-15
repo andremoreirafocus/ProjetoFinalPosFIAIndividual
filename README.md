@@ -25,6 +25,7 @@ Produzir um score de propensão à inadimplência que ajude a priorizar clientes
 - avaliação com AUC, Gini, KS, Average Precision, Brier, decis e thresholds;
 - interpretabilidade por permutação e SHAP;
 - análise de fairness e proposta de monitoramento;
+- proposta do agente acelerador de revisão de crédito para apoiar a revisão humana;
 - orquestração ponta a ponta com Airflow;
 - API FastAPI, política de crédito configurável e frontend Streamlit;
 - ambientes Docker para banco, Airflow, Jupyter, API e frontend.
@@ -48,6 +49,15 @@ Home Credit CSVs
 ```
 
 A implementação completa e o desenho arquitetural estão documentados em [data-platform/README.md](./data-platform/README.md).
+
+### Propostas arquiteturais
+
+Os dois entregáveis propostos para evolução da solução estão documentados separadamente:
+
+- [monitoramento do modelo em produção](./data-platform/MLOps/MONITORING_ARCHITECTURE.md), abrangendo falhas operacionais, drift, maturação dos desfechos, performance, calibração e fairness;
+- [agente acelerador de revisão de crédito](./data-platform/MLOps/AGENT_ARCHITECTURE.md), que produz de forma assíncrona um relatório de apoio ao analista sem substituir a decisão humana.
+
+Esses componentes permanecem propostas arquiteturais. Os documentos distinguem explicitamente seus pré-requisitos já implementados das funcionalidades futuras.
 
 ## Resumo da metodologia utilizada
 
@@ -102,7 +112,7 @@ Detalhes e justificativas estão nos READMEs de cada componente.
 | `data-platform/DataPipeline/` | Ingestão, limpeza, ABT e EDA | [DataPipeline](./data-platform/DataPipeline/README.md) |
 | `data-platform/jupyter/` | Ambiente de notebooks | [Jupyter](./data-platform/jupyter/README.md) |
 | `data-platform/Model/` | Seleção, treinamento e avaliação do modelo | [Model](./data-platform/Model/README.md) |
-| `data-platform/MLOps/` | FastAPI, Streamlit, política e testes | [MLOps](./data-platform/MLOps/README.md) |
+| `data-platform/MLOps/` | FastAPI, Streamlit, política, testes e propostas arquiteturais | [MLOps](./data-platform/MLOps/README.md) |
 | `data-platform/postgres/` | Inicialização e persistência relacional | [PostgreSQL](./data-platform/postgres/README.md) |
 
 ## Execução rápida

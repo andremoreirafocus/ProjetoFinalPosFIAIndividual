@@ -405,7 +405,7 @@ Em todas as jornadas, o frontend exibe score, classe, origem, threshold do model
 
 ### API
 
-`Dockerfile.api` instala somente as dependências da API, copia o código de `MLOps`, define `MODEL_PATH` e inicia Uvicorn na porta 8000. O artefato **não** é embutido na imagem: ele é lido em tempo de execução de um volume Docker (`./Model/artifacts`, montado como somente leitura em `credit-api`) — a mesma pasta onde o `train.py` da pipeline de dados grava `lightgbm_abt.pkl` logo após um treinamento bem-sucedido. Assim, o serviço e o treinamento ficam desacoplados: um novo treino atualiza o artefato no volume e a carga com retry o incorpora, sem reconstruir a imagem.
+`Dockerfile.api` instala somente as dependências da API, copia o código de `MLOps`, define `MODEL_PATH` e inicia Uvicorn na porta 8000. O artefato **não** é embutido na imagem: ele é lido em tempo de execução de um volume Docker (`./Model/artifacts`, montado como somente leitura em `credit-api`) — a mesma pasta onde o `train.py` da pipeline de dados grava `lightgbm_abt.pkl` logo após um treinamento bem-sucedido. Assim, um novo treinamento atualiza o arquivo no volume sem exigir a reconstrução da imagem. Como a API mantém em memória o modelo já carregado e o retry só atua enquanto a carga inicial não foi concluída, é necessário reiniciar o container `credit-api` para incorporar um novo artefato.
 
 ### Frontend
 
@@ -470,12 +470,12 @@ Os testes de integração `test_predict.py` e `test_configuration.py` executam o
 - não há autenticação ou autorização nos endpoints;
 - requisições e respostas não são persistidas em armazenamento de auditoria;
 - a API depende da disponibilidade da ABT no PostgreSQL;
-- o artefato é entregue à API por volume compartilhado, e não por um *model registry* versionado;
+- os artefatos são mantidos em um único diretório persistente, compartilhado por *bind mounts* e sobrescrito a cada treinamento, sem histórico físico de versões ou *model registry*;
 - não há monitoramento contínuo de drift, latência ou performance pós-deploy.
 
 ## Próximos passos
 
-Além de calibração do score, autenticação e adoção de um *model registry*, dois eixos completam a proposta de arquitetura (itens iii e iv do escopo individual).
+Os dois eixos detalhados a seguir completam a proposta de arquitetura dos itens iii e iv do escopo individual. Calibração do score, autenticação e adoção de um *model registry* são possíveis evoluções adicionais, apenas citadas e não detalhadas arquiteturalmente neste projeto.
 
 ### iii. Monitoramento em produção
 

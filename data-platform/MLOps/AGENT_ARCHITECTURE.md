@@ -157,7 +157,7 @@ O agente acelerador de revisão de crédito interpreta evidências determinísti
 
 ### Catálogo de features
 
-O catálogo pertence ao contexto do agente acelerador de revisão de crédito, não ao serviço de predição. Ele traduz os campos técnicos para conceitos de negócio e informa quais features podem ser usadas no relatório.
+Nesta proposta, o catálogo é consumido pelo agente acelerador de revisão de crédito, não pelo serviço de predição. Ele permanece um artefato genérico e reutilizável, que traduz os campos técnicos para conceitos de negócio e informa quais features podem ser usadas em cada finalidade.
 
 Features com `allowed_in_report: false` não são enviadas ao modelo de linguagem como justificativas da avaliação. Elas podem continuar disponíveis em fluxos separados de auditoria de *fairness*.
 

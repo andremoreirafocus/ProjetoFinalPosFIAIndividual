@@ -25,7 +25,7 @@ A plataforma cobre dois ciclos complementares:
 1. **Ciclo de desenvolvimento e treinamento:** ingestão das fontes, preparação da ABT, análise, comparação de modelos, treinamento e persistência do artefato.
 2. **Ciclo de inferência:** recuperação ou fornecimento das features, cálculo do score, aplicação da política demonstrativa e apresentação do resultado.
 
-Monitoramento contínuo, registry de modelos, autenticação e implantação produtiva estão descritos como próximos passos; não fazem parte da implementação atual.
+Monitoramento contínuo e agente acelerador de revisão de crédito estão detalhados como propostas futuras e não fazem parte da implementação atual. As propostas de [monitoramento do modelo em produção](./MLOps/MONITORING_ARCHITECTURE.md) e do [agente acelerador de revisão de crédito](./MLOps/AGENT_ARCHITECTURE.md) distinguem os pré-requisitos já disponíveis dos componentes ainda não implementados. Atualmente, os artefatos ficam em um único diretório persistente, compartilhado entre os containers por volumes do tipo *bind mount*, e são sobrescritos a cada treinamento; não há histórico físico de versões nem *model registry*. Autenticação, implantação produtiva e a eventual adoção de um *model registry* são apenas citadas como possíveis evoluções, sem definição arquitetural neste projeto.
 
 ## Arquitetura
 
@@ -49,6 +49,7 @@ airflow/data/csv
                     ┌───────▼───┐ ┌───▼────────────────┐
                     │ Jupyter   │ │ Modelo LightGBM    │
                     │ EDA       │ │ artefato + métricas│
+                    │           │ │ + referências     │
                     └───────────┘ └─────────┬──────────┘
                                            │
                               ┌────────────▼────────────┐
@@ -79,7 +80,7 @@ airflow/data/csv
 | Agregação | tabelas temporárias por `sk_id_curr` | Converte relações um-para-muitos em features por cliente. |
 | Analítica | `application_abt` | Contrato tabular compartilhado entre análise, treinamento e inferência. |
 | Modelagem | `config_model.json`, notebooks, `train.py` | Seleciona, avalia e treina o LightGBM. |
-| Artefatos | `lightgbm_abt.pkl`, `metrics.json` | Transporta modelo, categorias, features e metadados para inferência. |
+| Artefatos | `lightgbm_abt.pkl`, `metrics.json`, `feature_reference.json` | Transportam o modelo e seus metadados, as métricas da avaliação e as referências estatísticas. |
 | Serving | FastAPI e política de crédito | Expõe o score e converte faixas em recomendações. |
 | Experiência | Streamlit | Permite demonstrar preenchimento, recuperação e consulta de clientes. |
 
@@ -104,7 +105,7 @@ airflow/data/csv
 | DataPipeline | Ingestão, limpeza, agregações e ABT | [DataPipeline/README.md](./DataPipeline/README.md) |
 | Jupyter | Ambiente dos notebooks de análise e modelagem | [jupyter/README.md](./jupyter/README.md) |
 | Model | Seleção, treinamento, avaliação e inferência local | [Model/README.md](./Model/README.md) |
-| MLOps | API, política de crédito, frontend e testes | [MLOps/README.md](./MLOps/README.md) |
+| MLOps | API, política de crédito, frontend, testes e propostas arquiteturais | [MLOps/README.md](./MLOps/README.md) |
 
 ## Fluxo de dados e modelo
 
@@ -112,7 +113,7 @@ airflow/data/csv
 2. A DAG carrega as quatro fontes no banco `data`.
 3. O pipeline cria tabelas tratadas e agregações por `sk_id_curr`.
 4. A tabela `application_abt` consolida as features preditoras em uma linha por cliente.
-5. O treinamento selecionado gera `Model/artifacts/lightgbm_abt.pkl` e `metrics.json`.
+5. O treinamento selecionado gera `Model/artifacts/lightgbm_abt.pkl`, `metrics.json` e `feature_reference.json`.
 6. A API carrega o artefato e consulta a ABT quando recebe um identificador de cliente.
 7. A política transforma o score em aprovação, revisão manual ou rejeição demonstrativa.
 8. O Streamlit disponibiliza formulário, recuperação editável e consulta direta.
@@ -129,7 +130,7 @@ Analista disponibiliza CSVs
   → ABT é materializada
   → LightGBM é treinado e avaliado em holdout
   → modelo final é retreinado com toda a ABT
-  → artefato e métricas são persistidos
+  → artefato, métricas e referências estatísticas são persistidos
 ```
 
 O pipeline pode ser reexecutado para reconstruir as tabelas derivadas e atualizar o artefato. A seleção de algoritmo e hiperparâmetros permanece documentada nos notebooks, enquanto a DAG executa a configuração já escolhida.
@@ -156,6 +157,7 @@ Essa abordagem reduz divergência entre engenharia de atributos offline e online
 | Fontes e tabelas do pipeline | `DataPipeline/config_pipeline.json` | DAG e módulos de transformação. |
 | Features e hiperparâmetros | `Model/config_model.json` | treinamento, avaliação e validações. |
 | Artefato de inferência | `Model/artifacts/lightgbm_abt.pkl` | script local e API. |
+| Referências estatísticas | `Model/artifacts/feature_reference.json` | API e consumidores de explicações. |
 | Schema HTTP | `MLOps/app/api/schemas.py` | API e frontend. |
 | Limites da política | variáveis `CREDIT_*` | API e apresentação do resultado. |
 
@@ -400,6 +402,7 @@ docker compose down
 
 - calibrar o score quando houver necessidade de interpretação probabilística;
 - validar thresholds com custos reais do negócio;
-- implementar monitoramento contínuo de dados, modelo e serviço;
+- implementar a proposta de [monitoramento contínuo de dados, modelo e serviço](./MLOps/MONITORING_ARCHITECTURE.md);
+- implementar a proposta do [agente acelerador de revisão de crédito](./MLOps/AGENT_ARCHITECTURE.md);
 - formalizar versionamento, rastreabilidade e auditoria das decisões;
 - automatizar testes, build e implantação.

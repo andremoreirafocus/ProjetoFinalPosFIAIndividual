@@ -72,7 +72,7 @@ A DAG não possui agendamento periódico (`schedule=None`) e deve ser disparada 
 | 5 | `agg_intermediate_bureau` | `create_agg_bureau` | Indicadores agregados de bureau. |
 | 5 | `agg_intermediate_installments` | `create_agg_installments` | Indicadores de atraso em parcelas. |
 | 6 | `generate_analytical_base_table` | `run_abt_generation` | ABT final com uma linha por cliente. |
-| 7 | `train_machine_learning_model` | `run_training_pipeline` | LightGBM e métricas persistidos. |
+| 7 | `train_machine_learning_model` | `run_training_pipeline` | LightGBM, métricas e referências estatísticas persistidos. |
 
 As tarefas marcadas com a mesma ordem podem executar em paralelo. O treinamento só é liberado após a conclusão da ABT.
 
@@ -195,7 +195,10 @@ Uma execução completa deve produzir:
 - tabelas brutas e tratadas no banco `data`;
 - tabela `application_abt`;
 - artefato `Model/artifacts/lightgbm_abt.pkl`;
-- arquivo `Model/artifacts/metrics.json` atualizado.
+- arquivo `Model/artifacts/metrics.json` atualizado;
+- arquivo `Model/artifacts/feature_reference.json` atualizado.
+
+Como evolução proposta, essa etapa deverá também gerar `monitoring_reference.json`, com o baseline específico para as comparações temporais descritas na [arquitetura de monitoramento do modelo em produção](../MLOps/MONITORING_ARCHITECTURE.md). Esse artefato ainda não faz parte da implementação atual.
 
 ## Reexecução e recuperação
 
@@ -208,4 +211,6 @@ Os CSVs e o volume `pgdata` persistem fora do ciclo de vida dos containers. `doc
 - [PostgreSQL](../postgres/README.md)
 - [Pipeline de dados](../DataPipeline/README.md)
 - [Modelo](../Model/README.md)
+- [Monitoramento proposto](../MLOps/MONITORING_ARCHITECTURE.md)
+- [Agente acelerador de revisão de crédito proposto](../MLOps/AGENT_ARCHITECTURE.md)
 - [Jupyter](../jupyter/README.md)
